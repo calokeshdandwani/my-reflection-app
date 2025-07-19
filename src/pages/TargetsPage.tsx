@@ -1,14 +1,13 @@
 import React from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import AreaList from "@/components/AreaList";
-import TaskList from "@/components/TaskList";
+import AreaList from "./targets/AreaList"; // Import from new location
+import TaskList from "./targets/TaskList"; // Import from new location
 import { Area, Task } from "@/types";
 import { loadState, saveState } from "@/lib/storage";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import Layout from "@/components/Layout"; // Import Layout
 
-const TasksPage = () => {
+const TargetsPage = () => {
   const [areas, setAreas] = React.useState<Area[]>([]);
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [selectedAreaId, setSelectedAreaId] = React.useState<string | null>(null);
@@ -93,31 +92,32 @@ const TasksPage = () => {
     : [];
 
   return (
-    <Layout
-      sidebar={
+    <div className="flex h-full">
+      <aside className="w-64 border-r bg-sidebar text-sidebar-foreground p-4 flex flex-col">
         <AreaList
           areas={areas}
           selectedAreaId={selectedAreaId}
           onSelectArea={setSelectedAreaId}
           onAddArea={handleAddArea}
         />
-      }
-    >
-      {selectedAreaId ? (
-        <TaskList
-          tasks={filteredTasks}
-          onAddTask={handleAddTask}
-          onToggleTaskCompletion={handleToggleTaskCompletion}
-        />
-      ) : (
-        <div className="flex flex-col items-center justify-center h-full text-center">
-          <h2 className="text-2xl font-bold mb-4">No Area Selected</h2>
-          <p className="text-muted-foreground">Please add a new area or select an existing one from the sidebar to view and add tasks.</p>
-        </div>
-      )}
+      </aside>
+      <main className="flex-1 p-6">
+        {selectedAreaId ? (
+          <TaskList
+            tasks={filteredTasks}
+            onAddTask={handleAddTask}
+            onToggleTaskCompletion={handleToggleTaskCompletion}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <h2 className="text-2xl font-bold mb-4">No Area Selected</h2>
+            <p className="text-muted-foreground">Please add a new area or select an existing one from the sidebar to view and add tasks.</p>
+          </div>
+        )}
+      </main>
       <MadeWithDyad />
-    </Layout>
+    </div>
   );
 };
 
-export default TasksPage;
+export default TargetsPage;

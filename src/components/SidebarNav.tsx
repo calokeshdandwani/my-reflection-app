@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Home, ListTodo, History } from "lucide-react"; // Import History icon
+import { Home, ListTodo, History } from "lucide-react"; // ListTodo icon is suitable for Targets
 
 const SidebarNav: React.FC = () => {
   return (
@@ -19,7 +19,7 @@ const SidebarNav: React.FC = () => {
         Home
       </NavLink>
       <NavLink
-        to="/tasks"
+        to="/targets"
         className={({ isActive }) =>
           cn(
             "flex items-center gap-3 rounded-md px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -28,7 +28,7 @@ const SidebarNav: React.FC = () => {
         }
       >
         <ListTodo className="h-4 w-4" />
-        Tasks
+        Targets
       </NavLink>
       <NavLink
         to="/history"
