@@ -1,78 +1,64 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
+import { toZonedTime, formatInTimeZone } from "date-fns-tz";
 import { toast } from "sonner";
-import { utcToZonedTime } from "date-fns-tz"; // Corrected import style
-import { saveToLocalStorage, loadFromLocalStorage } from "@/lib/storage";
+import { loadState, saveState } from "@/lib/storage";
 
-const NOTIFICATION_PERMISSION_KEY = "notificationPermission";
-const LAST_NOTIFICATION_TIME_KEY = "lastNotificationTime";
+const NOTIFICATION_KEY = "lastNotificationHour";
+const TIMEZONE = "Asia/Kolkata"; // IST
 
 const NotificationScheduler: React.FC = () => {
-  const intervalRef = useRef<number | null>(null);
-
-  useEffect(() => {
+  React.useEffect(() => {
     // Request notification permission
-    if (Notification.permission === "default") {
+    if ("Notification" in window) {
       Notification.requestPermission().then((permission) => {
-        saveToLocalStorage(NOTIFICATION_PERMISSION_KEY, permission);
-      });
-    }
-
-    const scheduleNotification = () => {
-      const now = new Date();
-      const nowIST = utcToZonedTime(now, "Asia/Kolkata"); // Used utcToZonedTime directly
-
-      const currentHourIST = nowIST.getHours();
-      const currentMinutesIST = nowIST.getMinutes();
-
-      // Check if within 8 AM to 8 PM IST (inclusive of 8 AM, exclusive of 8 PM)
-      if (currentHourIST >= 8 && currentHourIST < 20) {
-        const lastNotificationTime = loadFromLocalStorage(LAST_NOTIFICATION_TIME_KEY, null);
-        let shouldNotify = false;
-
-        if (lastNotificationTime) {
-          const lastNotifiedDate = new Date(lastNotificationTime);
-          const lastNotifiedIST = utcToZonedTime(lastNotifiedDate, "Asia/Kolkata");
-          
-          // Check if an hour has passed since the last notification
-          // and if it's a new hour (e.g., notified at 8:05, next at 9:00, not 8:50)
-          if (nowIST.getHours() !== lastNotifiedIST.getHours() || 
-              (nowIST.getHours() === lastNotifiedIST.getHours() && nowIST.getMinutes() >= lastNotifiedIST.getMinutes() + 59)) { // Allow a small buffer
-            shouldNotify = true;
-          }
+        if (permission === "granted") {
+          console.log("Notification permission granted.");
         } else {
-          // If no last notification time, notify at the start of the hour or soon after
-          shouldNotify = true;
+          console.warn("Notification permission denied.");
+          toast.warning("Notification permission denied. Hourly prompts will not appear.");
         }
-
-        if (shouldNotify && Notification.permission === "granted") {
-          new Notification("Time for your reflection!", {
-            body: "What did you do in the last hour?",
-            icon: "/vite.svg", // You can change this to your app's icon
-          });
-          saveToLocalStorage(LAST_NOTIFICATION_TIME_KEY, now.toISOString());
-        }
-      }
-    };
-
-    // Clear any existing interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+      });
+    } else {
+      console.warn("Browser does not support notifications.");
+      toast.warning("Your browser does not support notifications. Hourly prompts will not appear.");
     }
 
-    // Set interval to check every minute (or more frequently if needed for precision)
-    intervalRef.current = window.setInterval(scheduleNotification, 60 * 1000); // Check every minute
+    const checkTimeAndNotify = () => {
+      const now = new Date();
+      const istTime = toZonedTime(now, TIMEZONE);
+      const currentHourIST = istTime.getHours();
+      const currentMinuteIST = istTime.getMinutes();
 
-    // Run immediately on mount
-    scheduleNotification();
+      // Check if it's on the hour (e.g., 8:00, 9:00, etc.)
+      if (currentMinuteIST === 0) {
+        // Check if it's between 8 AM and 8 PM IST (inclusive of 8 AM, exclusive of 8 PM)
+        if (currentHourIST >= 8 && currentHourIST < 20) {
+          const lastNotifiedHour = loadState<number>(NOTIFICATION_KEY);
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+          // Only send notification if it's a new hour since the last notification
+          if (lastNotifiedHour !== currentHourIST) {
+            if ("Notification" in window && Notification.permission === "granted") {
+              new Notification("Time for your hourly reflection!", {
+                body: "What you did in the last one hour?",
+                icon: "/vite.svg", // You can change this to a more relevant icon
+              });
+              saveState(NOTIFICATION_KEY, currentHourIST);
+            }
+          }
+        }
       }
     };
+
+    // Check every minute
+    const intervalId = setInterval(checkTimeAndNotify, 60 * 1000); // Every 1 minute
+
+    // Initial check on mount
+    checkTimeAndNotify();
+
+    return () => clearInterval(intervalId); // Clean up on unmount
   }, []);
 
-  return null; // This component doesn't render anything
+  return null; // This component doesn't render anything visible
 };
 
 export default NotificationScheduler;

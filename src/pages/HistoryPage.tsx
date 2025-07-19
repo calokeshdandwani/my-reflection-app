@@ -1,106 +1,113 @@
-import React, { useState, useEffect } from "react";
-import Layout from "@/components/Layout";
-import { HourlyResponse } from "@/types";
-import { supabase } from "@/lib/supabaseClient";
+import React from "react";
+import { loadState } from "@/lib/storage";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { MadeWithDyad } from "@/components/made-with-dyad";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button"; // Import Button component
+import { Task } from "@/types"; // Import Task interface
+
+interface HourlyResponse {
+  timestamp: string; // ISO string date
+  response: string;
+}
 
 const HistoryPage: React.FC = () => {
-  const [hourlyResponses, setHourlyResponses] = useState<HourlyResponse[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [responses, setResponses] = React.useState<HourlyResponse[]>([]);
+  const [tasks, setTasks] = React.useState<Task[]>([]); // State to hold all tasks for export
 
-  useEffect(() => {
-    const fetchHourlyResponses = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data, error } = await supabase
-          .from("hourly_responses")
-          .select("*")
-          .order("timestamp", { ascending: false });
-
-        if (error) {
-          throw error;
-        }
-        setHourlyResponses(data as HourlyResponse[]);
-      } catch (err: any) {
-        console.error("Failed to load reflections:", err.message);
-        setError("Failed to load reflections. Please try again.");
-        toast.error("Failed to load reflections.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHourlyResponses();
+  React.useEffect(() => {
+    const storedResponses = loadState<HourlyResponse[]>("hourlyResponses");
+    if (storedResponses) {
+      // Sort responses from newest to oldest
+      const sortedResponses = [...storedResponses].sort((a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+      setResponses(sortedResponses);
+    }
+    const storedTasks = loadState<Task[]>("tasks");
+    if (storedTasks) {
+      setTasks(storedTasks);
+    }
   }, []);
 
-  const exportToCsv = (data: any[], filename: string) => {
-    if (data.length === 0) {
-      toast.info(`No data to export for ${filename}.`);
-      return;
+  const exportToCsv = (data: any[], filename: string, headers: string[]) => {
+    const csvRows = [];
+    csvRows.push(headers.join(',')); // Add headers
+
+    for (const row of data) {
+      const values = headers.map(header => {
+        let value = row[header.replace(/\s/g, '')]; // Remove spaces from header to match key
+        if (value === undefined || value === null) {
+          value = '';
+        } else if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+          value = `"${value.replace(/"/g, '""')}"`; // Escape double quotes and wrap in quotes
+        }
+        return value;
+      });
+      csvRows.push(values.join(','));
     }
 
-    const headers = Object.keys(data[0]);
-    const csvRows = [
-      headers.join(","),
-      ...data.map((row) =>
-        headers
-          .map((fieldName) => JSON.stringify(row[fieldName], (key, value) => value === null ? '' : value))
-          .join(",")
-      ),
-    ];
-    const csvString = csvRows.join("\n");
-    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", filename);
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success(`Exported ${filename} successfully!`);
-    }
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const handleExportReflections = () => {
-    exportToCsv(hourlyResponses, "hourly_reflections.csv");
+  const handleExportResponses = () => {
+    const dataToExport = responses.map(r => ({
+      Timestamp: format(new Date(r.timestamp), "yyyy-MM-dd HH:mm:ss"),
+      Response: r.response,
+    }));
+    exportToCsv(dataToExport, "hourly_reflections.csv", ["Timestamp", "Response"]);
+  };
+
+  const handleExportTasks = () => {
+    const dataToExport = tasks.map(t => ({
+      ID: t.id,
+      AreaID: t.areaId,
+      Name: t.name,
+      Priority: t.priority,
+      Completed: t.completed ? 'Yes' : 'No',
+      CompletedAt: t.completedAt ? format(new Date(t.completedAt), "yyyy-MM-dd HH:mm:ss") : '',
+      CreatedAt: format(new Date(t.createdAt), "yyyy-MM-dd HH:mm:ss"),
+      ParentID: t.parentId || '',
+    }));
+    exportToCsv(dataToExport, "all_tasks.csv", ["ID", "AreaID", "Name", "Priority", "Completed", "CompletedAt", "CreatedAt", "ParentID"]);
   };
 
   return (
-    <Layout>
-      <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-6">Reflection History</h1>
+    <div className="flex flex-col h-full max-w-2xl mx-auto p-6 bg-card rounded-lg shadow-lg">
+      <h1 className="text-3xl font-bold text-center mb-8 text-primary">Your Reflection History</h1>
 
-        <div className="mb-4 flex justify-end">
-          <Button onClick={handleExportReflections}>Export Reflections CSV</Button>
-        </div>
-
-        {loading && <p className="text-center text-muted-foreground">Loading reflections...</p>}
-        {error && <p className="text-center text-destructive">{error}</p>}
-        {!loading && !error && hourlyResponses.length === 0 && (
-          <p className="text-center text-muted-foreground">No reflections recorded yet.</p>
-        )}
-
-        <div className="space-y-4">
-          {hourlyResponses.map((response) => (
-            <div
-              key={response.id}
-              className="bg-card text-card-foreground p-4 rounded-lg shadow-sm border border-border"
-            >
-              <p className="text-sm text-muted-foreground mb-2">
-                {format(new Date(response.timestamp), "PPP p")}
-              </p>
-              <p className="text-base">{response.response}</p>
-            </div>
-          ))}
-        </div>
+      <div className="flex justify-center gap-4 mb-6">
+        <Button onClick={handleExportResponses}>Export Reflections (CSV)</Button>
+        <Button onClick={handleExportTasks}>Export Tasks (CSV)</Button>
       </div>
-    </Layout>
+
+      <ScrollArea className="flex-1 mb-6 p-4 border rounded-md bg-background">
+        {responses.length === 0 ? (
+          <p className="text-muted-foreground text-center mt-8">No reflections recorded yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {responses.map((entry, index) => (
+              <div key={index} className="flex flex-col items-start">
+                <div className="bg-gray-100 text-gray-800 p-3 rounded-lg max-w-[80%] self-start">
+                  <p>{entry.response}</p>
+                  <p className="text-xs text-gray-600 mt-1 text-right">
+                    {format(new Date(entry.timestamp), "MMM dd, yyyy HH:mm")}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+      <MadeWithDyad />
+    </div>
   );
 };
 

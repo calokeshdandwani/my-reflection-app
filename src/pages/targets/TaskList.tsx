@@ -1,51 +1,34 @@
-import React, { useState } from "react";
+import React from "react";
 import { Task } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, Plus, Edit, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Star, Pencil, Trash, Check, X, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 interface TaskListProps {
   tasks: Task[];
   onAddTask: (name: string, priority: number, parentId?: string) => void;
-  onToggleComplete: (id: string, completed: boolean) => void;
-  onEditTask: (id: string, newName: string, newPriority: number) => void;
-  onDeleteTask: (id: string) => void;
+  onToggleTaskCompletion: (taskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
+  onEditTask: (taskId: string, newName: string, newPriority: number) => void; // Updated prop signature
 }
 
 const TaskList: React.FC<TaskListProps> = ({
   tasks,
   onAddTask,
-  onToggleComplete,
-  onEditTask,
+  onToggleTaskCompletion,
   onDeleteTask,
+  onEditTask,
 }) => {
-  const [newTaskName, setNewTaskName] = useState("");
-  const [newTaskPriority, setNewTaskPriority] = useState(3);
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [editedTaskName, setEditedTaskName] = useState("");
-  const [editedTaskPriority, setEditedTaskPriority] = useState(3);
-  const [addingSubTaskFor, setAddingSubTaskFor] = useState<string | null>(null);
-  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
-
-  const sortedTasks = [...tasks].sort((a, b) => {
-    // Completed tasks go to the bottom, sorted by completion time
-    if (a.completed && !b.completed) return 1;
-    if (!a.completed && b.completed) return -1;
-    if (a.completed && b.completed) {
-      return new Date(a.completed_at!).getTime() - new Date(b.completed_at!).getTime();
-    }
-    // Incomplete tasks sorted by priority (descending)
-    return b.priority - a.priority;
-  });
-
-  const topLevelTasks = sortedTasks.filter((task) => !task.parent_id);
-
-  const getSubTasks = (parentId: string) => {
-    return sortedTasks.filter((task) => task.parent_id === parentId);
-  };
+  const [newTaskName, setNewTaskName] = React.useState("");
+  const [newTaskPriority, setNewTaskPriority] = React.useState(3);
+  const [editingTaskId, setEditingTaskId] = React.useState<string | null>(null);
+  const [editedTaskName, setEditedTaskName] = React.useState("");
+  const [editedTaskPriority, setEditedTaskPriority] = React.useState(3); // New state for editing priority
+  const [addingSubTaskFor, setAddingSubTaskFor] = React.useState<string | null>(null);
+  const [expandedTasks, setExpandedTasks] = React.useState<Set<string>>(new Set());
 
   const handleAddTask = (parentId?: string) => {
     if (newTaskName.trim()) {
@@ -54,7 +37,7 @@ const TaskList: React.FC<TaskListProps> = ({
       setNewTaskPriority(3);
       setAddingSubTaskFor(null);
       if (parentId) {
-        setExpandedTasks((prev) => new Set(prev).add(parentId));
+        setExpandedTasks(prev => new Set(prev).add(parentId));
       }
     }
   };
@@ -62,29 +45,33 @@ const TaskList: React.FC<TaskListProps> = ({
   const handleEditClick = (task: Task) => {
     setEditingTaskId(task.id);
     setEditedTaskName(task.name);
-    setEditedTaskPriority(task.priority);
+    setEditedTaskPriority(task.priority); // Set initial priority for editing
   };
 
-  const handleSaveEdit = () => {
-    if (editingTaskId && editedTaskName.trim()) {
-      onEditTask(editingTaskId, editedTaskName.trim(), editedTaskPriority);
+  const handleSaveEdit = (taskId: string) => {
+    if (editedTaskName.trim()) {
+      onEditTask(taskId, editedTaskName.trim(), editedTaskPriority); // Pass new priority
       setEditingTaskId(null);
+      setEditedTaskName("");
+      setEditedTaskPriority(3); // Reset
     }
   };
 
   const handleCancelEdit = () => {
     setEditingTaskId(null);
+    setEditedTaskName("");
+    setEditedTaskPriority(3); // Reset
   };
 
-  const handleAddSubTaskClick = (taskId: string) => {
-    setAddingSubTaskFor(taskId);
-    setNewTaskName(""); // Clear input for new subtask
+  const handleAddSubTaskClick = (parentId: string) => {
+    setAddingSubTaskFor(parentId);
+    setNewTaskName("");
     setNewTaskPriority(3);
-    setExpandedTasks((prev) => new Set(prev).add(taskId)); // Expand parent when adding subtask
+    setExpandedTasks(prev => new Set(prev).add(parentId));
   };
 
   const toggleExpand = (taskId: string) => {
-    setExpandedTasks((prev) => {
+    setExpandedTasks(prev => {
       const newSet = new Set(prev);
       if (newSet.has(taskId)) {
         newSet.delete(taskId);
@@ -95,140 +82,178 @@ const TaskList: React.FC<TaskListProps> = ({
     });
   };
 
-  const renderStarRating = (currentRating: number, setRating: (rating: number) => void) => (
-    <div className="flex items-center space-x-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={cn(
-            "h-4 w-4 cursor-pointer",
-            star <= currentRating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"
-          )}
-          onClick={() => setRating(star)}
-        />
-      ))}
-    </div>
-  );
+  const sortTasks = (tasksToSort: Task[]) => {
+    return [...tasksToSort].sort((a, b) => {
+      if (a.completed && !b.completed) return 1;
+      if (!a.completed && b.completed) return -1;
 
-  const renderTaskItem = (task: Task, indentationLevel: number = 0) => {
-    const isEditing = editingTaskId === task.id;
+      if (a.completed && b.completed) {
+        return new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime();
+      }
+
+      if (!a.completed && !b.completed) {
+        if (b.priority !== a.priority) {
+          return b.priority - a.priority;
+        }
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      return 0;
+    });
+  };
+
+  const renderTaskItem = (task: Task, level: number = 0) => {
+    const subTasks = sortTasks(tasks.filter(t => t.parentId === task.id));
     const isExpanded = expandedTasks.has(task.id);
-    const subTasks = getSubTasks(task.id);
+    const hasSubTasks = subTasks.length > 0;
 
     return (
-      <div
-        key={task.id}
-        className={cn(
-          "flex flex-col p-3 rounded-md shadow-sm border",
-          task.completed ? "bg-muted text-muted-foreground line-through" : "bg-card text-card-foreground",
-          `ml-${indentationLevel * 4}` // Tailwind's ml-4, ml-8, etc.
-        )}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center flex-1 min-w-0">
-            <Checkbox
-              checked={task.completed}
-              onCheckedChange={(checked) => onToggleComplete(task.id, checked as boolean)}
-              className="mr-3"
-              disabled={isEditing}
-            />
-            {isEditing ? (
-              <div className="flex-1 flex items-center space-x-2">
-                <Input
-                  value={editedTaskName}
-                  onChange={(e) => setEditedTaskName(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSaveEdit()}
-                  className="flex-1"
-                />
-                {renderStarRating(editedTaskPriority, setEditedTaskPriority)}
-              </div>
-            ) : (
-              <span className="flex-1 break-words mr-2">{task.name}</span>
-            )}
-          </div>
-          <div className="flex items-center space-x-2 ml-auto">
-            {!isEditing && (
-              <>
-                {renderStarRating(task.priority, () => {})} {/* Display only, not interactive */}
-                <Button variant="ghost" size="icon" onClick={() => handleEditClick(task)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => onDeleteTask(task.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleAddSubTaskClick(task.id)}
-                  className="text-primary-foreground"
+      <React.Fragment key={task.id}>
+        <div
+          className={cn(
+            "flex flex-col p-3 border rounded-md bg-card text-card-foreground",
+            task.completed && "opacity-60",
+            level > 0 && `ml-${level * 6} border-l-2 border-gray-200 pl-3`,
+          )}
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3 flex-1">
+              <Checkbox
+                id={`task-${task.id}`}
+                checked={task.completed}
+                onCheckedChange={() => onToggleTaskCompletion(task.id)}
+              />
+              {editingTaskId === task.id ? (
+                <div className="flex items-center flex-1 gap-2">
+                  <Input
+                    value={editedTaskName}
+                    onChange={(e) => setEditedTaskName(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSaveEdit(task.id)}
+                    className="flex-1"
+                  />
+                  <div className="flex items-center">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={cn(
+                          "h-5 w-5 cursor-pointer",
+                          star <= editedTaskPriority ? "text-yellow-400 fill-yellow-400" : "text-gray-300",
+                        )}
+                        onClick={() => setEditedTaskPriority(star)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <label
+                  htmlFor={`task-${task.id}`}
+                  className={cn(
+                    "text-lg font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                    task.completed && "line-through text-muted-foreground",
+                  )}
                 >
-                  <Plus className="h-3.5 w-3.5" />
-                </Button>
-                {subTasks.length > 0 && (
-                  <Button variant="ghost" size="icon" onClick={() => toggleExpand(task.id)}>
-                    {isExpanded ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
+                  {task.name}
+                </label>
+              )}
+              {!task.completed && editingTaskId !== task.id && (
+                <div className="flex items-center ml-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={cn(
+                        "h-4 w-4",
+                        star <= task.priority ? "text-yellow-400 fill-yellow-400" : "text-gray-300",
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-1 ml-auto">
+              {editingTaskId === task.id ? (
+                <>
+                  <Button variant="ghost" size="icon" onClick={() => handleSaveEdit(task.id)}>
+                    <Check className="h-4 w-4 text-green-500" />
                   </Button>
-                )}
-              </>
-            )}
-            {isEditing && (
-              <>
-                <Button onClick={handleSaveEdit} size="sm">Save</Button>
-                <Button variant="outline" onClick={handleCancelEdit} size="sm">Cancel</Button>
-              </>
-            )}
+                  <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
+                    <X className="h-4 w-4 text-red-500" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="icon" onClick={() => handleEditClick(task)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => onDeleteTask(task.id)}>
+                    <Trash className="h-4 w-4 text-red-500" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleAddSubTaskClick(task.id)}>
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                  {hasSubTasks && (
+                    <Button variant="ghost" size="icon" onClick={() => toggleExpand(task.id)}>
+                      {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
+          {task.completed && task.completedAt && (
+            <span className="text-sm text-muted-foreground mt-1 self-end">
+              Completed: {format(new Date(task.completedAt), "MMM dd, yyyy HH:mm")}
+            </span>
+          )}
         </div>
-        {task.completed && task.completed_at && (
-          <p className="text-xs text-right mt-1">
-            Completed: {format(new Date(task.completed_at), "MMM dd, yyyy HH:mm")}
-          </p>
-        )}
-        {addingSubTaskFor === task.id && (
-          <div className="flex space-x-2 mt-2 ml-7">
-            <Input
-              placeholder="New Sub-task Name"
-              value={newTaskName}
-              onChange={(e) => setNewTaskName(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleAddTask(task.id)}
-              className="flex-1"
-            />
-            {renderStarRating(newTaskPriority, setNewTaskPriority)}
-            <Button onClick={() => handleAddTask(task.id)}>Add</Button>
-            <Button variant="outline" onClick={() => setAddingSubTaskFor(null)}>Cancel</Button>
+        {isExpanded && hasSubTasks && (
+          <div className="space-y-4 mt-4">
+            {subTasks.map(subTask => renderTaskItem(subTask, level + 1))}
           </div>
         )}
-        {isExpanded && subTasks.length > 0 && (
-          <div className="mt-2 space-y-2">
-            {subTasks.map((subTask) => renderTaskItem(subTask, indentationLevel + 1))}
-          </div>
-        )}
-      </div>
+      </React.Fragment>
     );
   };
 
+  const topLevelTasks = sortTasks(tasks.filter(task => !task.parentId));
+
   return (
-    <div className="space-y-4">
-      <div className="flex space-x-2">
+    <div className="flex flex-col h-full">
+      <h2 className="text-2xl font-bold mb-6">Tasks</h2>
+      <div className="flex items-center gap-2 mb-6">
         <Input
-          placeholder="New Task Name"
+          placeholder={addingSubTaskFor ? "New Sub-task Name" : "New Task Name"}
           value={newTaskName}
           onChange={(e) => setNewTaskName(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && handleAddTask()}
+          onKeyPress={(e) => e.key === "Enter" && handleAddTask(addingSubTaskFor || undefined)}
           className="flex-1"
         />
-        {renderStarRating(newTaskPriority, setNewTaskPriority)}
-        <Button onClick={() => handleAddTask()}>Add Task</Button>
-      </div>
-      <div className="space-y-2">
-        {topLevelTasks.length === 0 && (
-          <p className="text-center text-muted-foreground">No tasks yet. Add one above!</p>
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Star
+              key={star}
+              className={cn(
+                "h-5 w-5 cursor-pointer",
+                star <= newTaskPriority ? "text-yellow-400 fill-yellow-400" : "text-gray-300",
+              )}
+              onClick={() => setNewTaskPriority(star)}
+            />
+          ))}
+        </div>
+        <Button onClick={() => handleAddTask(addingSubTaskFor || undefined)} size="icon">
+          <Plus className="h-4 w-4" />
+        </Button>
+        {addingSubTaskFor && (
+          <Button variant="ghost" size="icon" onClick={() => setAddingSubTaskFor(null)}>
+            <X className="h-4 w-4" />
+          </Button>
         )}
-        {topLevelTasks.map((task) => renderTaskItem(task))}
+      </div>
+
+      <div className="space-y-4">
+        {topLevelTasks.length === 0 && tasks.length === 0 ? (
+          <p className="text-muted-foreground">No tasks yet. Add one above!</p>
+        ) : (
+          topLevelTasks.map(task => renderTaskItem(task))
+        )}
       </div>
     </div>
   );

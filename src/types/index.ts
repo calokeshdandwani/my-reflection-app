@@ -1,22 +1,16 @@
-export interface HourlyResponse {
+export interface Task {
   id: string;
-  timestamp: string;
-  response: string;
+  areaId: string;
+  name: string;
+  priority: number; // 1 to 5
+  completed: boolean;
+  completedAt?: string; // ISO string date
+  createdAt: string; // ISO string date
+  parentId?: string; // New: Optional parent ID for sub-tasks
 }
 
 export interface Area {
   id: string;
   name: string;
-  created_at: string;
-}
-
-export interface Task {
-  id: string;
-  area_id: string;
-  name: string;
-  priority: number;
-  completed: boolean;
-  completed_at?: string;
-  created_at: string;
-  parent_id?: string;
+  createdAt: string; // ISO string date
 }

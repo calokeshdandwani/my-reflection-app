@@ -1,79 +1,61 @@
-import { cn } from "@/lib/utils";
+import React from "react";
 import { NavLink } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Home, ListTodo, History, FileText } from "lucide-react"; // Added FileText icon for Summary
 
-interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {}
-
-export function SidebarNav({ className, ...props }: SidebarNavProps) {
-  const navItems = [
-    {
-      href: "/",
-      title: "Home",
-    },
-    {
-      href: "/targets",
-      title: "Targets",
-    },
-    {
-      href: "/history",
-      title: "History",
-      subItems: [
-        {
-          href: "/history/summary",
-          title: "Summary",
-        },
-      ],
-    },
-  ];
-
+const SidebarNav: React.FC = () => {
   return (
-    <nav
-      className={cn(
-        "flex space-x-2 md:flex-col md:space-x-0 md:space-y-1",
-        className,
-      )}
-      {...props}
-    >
-      {navItems.map((item) => (
-        <div key={item.href}>
-          <NavLink
-            to={item.href}
-            className={({ isActive }) =>
-              cn(
-                "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-9 px-4 py-2 justify-start",
-                isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "transparent",
-              )
-            }
-            // Use a render prop for children to get isActive state of the parent NavLink
-            children={({ isActive: parentIsActive }) => (
-              <>
-                {item.title}
-                {item.subItems && parentIsActive && ( // Conditionally render sub-items if parent is active
-                  <div className="ml-4 mt-1 space-y-1">
-                    {item.subItems.map((subItem) => (
-                      <NavLink
-                        key={subItem.href}
-                        to={subItem.href}
-                        className={({ isActive: isSubActive }) =>
-                          cn(
-                            "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-9 px-4 py-2 justify-start",
-                            isSubActive
-                              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                              : "transparent",
-                          )
-                        }
-                      >
-                        {subItem.title}
-                      </NavLink>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          />
-        </div>
-      ))}
+    <nav className="space-y-1">
+      <NavLink
+        to="/"
+        className={({ isActive }) =>
+          cn(
+            "flex items-center gap-3 rounded-md px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+          )
+        }
+      >
+        <Home className="h-4 w-4" />
+        Home
+      </NavLink>
+      <NavLink
+        to="/targets"
+        className={({ isActive }) =>
+          cn(
+            "flex items-center gap-3 rounded-md px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+          )
+        }
+      >
+        <ListTodo className="h-4 w-4" />
+        Targets
+      </NavLink>
+      <NavLink
+        to="/history"
+        className={({ isActive }) =>
+          cn(
+            "flex items-center gap-3 rounded-md px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+          )
+        }
+      >
+        <History className="h-4 w-4" />
+        History
+      </NavLink>
+      <NavLink
+        to="/history/summary"
+        className={({ isActive }) =>
+          cn(
+            "flex items-center gap-3 rounded-md px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ml-4", // Indent for sub-item
+            isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+          )
+        }
+      >
+        <FileText className="h-4 w-4" />
+        Summary
+      </NavLink>
     </nav>
   );
-}
+};
+
+export default SidebarNav;

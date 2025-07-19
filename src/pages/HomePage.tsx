@@ -1,70 +1,68 @@
-import React, { useState, useEffect } from "react";
-import Layout from "@/components/Layout";
+import React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { supabase } from "@/lib/supabaseClient";
-import { HourlyResponse } from "@/types";
+import { Send } from "lucide-react";
+import { loadState, saveState } from "@/lib/storage";
+import { MadeWithDyad } from "@/components/made-with-dyad";
+
+interface HourlyResponse {
+  timestamp: string; // ISO string date
+  response: string;
+}
 
 const HomePage: React.FC = () => {
-  const [response, setResponse] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [currentResponse, setCurrentResponse] = React.useState("");
+  // Responses are no longer displayed directly on this page, but still saved
+  const [responses, setResponses] = React.useState<HourlyResponse[]>([]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!response.trim()) {
-      toast.error("Please enter your reflection before submitting.");
-      return;
+  React.useEffect(() => {
+    const storedResponses = loadState<HourlyResponse[]>("hourlyResponses");
+    if (storedResponses) {
+      setResponses(storedResponses);
     }
+  }, []);
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("hourly_responses")
-        .insert([{ response: response.trim() }])
-        .select();
+  React.useEffect(() => {
+    saveState("hourlyResponses", responses);
+  }, [responses]);
 
-      if (error) {
-        throw error;
-      }
-
-      toast.success("Reflection saved successfully!");
-      setResponse(""); // Clear the input after submission
-    } catch (error: any) {
-      console.error("Error saving reflection:", error.message);
-      toast.error("Failed to save reflection. Please try again.");
-    } finally {
-      setLoading(false);
+  const handleSendResponse = () => {
+    if (currentResponse.trim()) {
+      const newResponse: HourlyResponse = {
+        timestamp: new Date().toISOString(),
+        response: currentResponse.trim(),
+      };
+      setResponses((prevResponses) => [...prevResponses, newResponse]);
+      setCurrentResponse(""); // Clear input after sending
     }
   };
 
   return (
-    <Layout>
-      <div className="flex flex-col items-center justify-center h-full p-4">
-        <div className="w-full max-w-2xl bg-card text-card-foreground rounded-lg shadow-lg p-6">
-          <h1 className="text-3xl font-bold mb-6 text-center">
-            Your Daily Reflection
-          </h1>
-          <p className="text-lg text-muted-foreground mb-8 text-center">
-            What did you do in the last hour?
-          </p>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Textarea
-              placeholder="Type your reflection here..."
-              value={response}
-              onChange={(e) => setResponse(e.target.value)}
-              rows={6}
-              className="w-full resize-none"
-              disabled={loading}
-            />
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Saving..." : "Submit Reflection"}
-            </Button>
-          </form>
+    <div className="flex flex-col h-full max-w-2xl mx-auto p-6 bg-card rounded-lg shadow-lg">
+      <h1 className="text-3xl font-bold text-center mb-8 text-primary">Your Daily Reflection</h1>
+
+      <div className="flex-1 mb-6 p-4 border rounded-md bg-background flex items-center justify-center">
+        <div className="flex flex-col items-start">
+          <div className="bg-blue-100 text-blue-800 p-3 rounded-lg max-w-[80%] self-start">
+            <p className="font-semibold">What you did in the last one hour?</p>
+          </div>
         </div>
       </div>
-    </Layout>
+
+      <div className="flex gap-2">
+        <Input
+          placeholder="Type your response here..."
+          value={currentResponse}
+          onChange={(e) => setCurrentResponse(e.target.value)}
+          onKeyPress={(e) => e.key === "Enter" && handleSendResponse()}
+          className="flex-1"
+        />
+        <Button onClick={handleSendResponse} size="icon">
+          <Send className="h-4 w-4" />
+        </Button>
+      </div>
+      <MadeWithDyad />
+    </div>
   );
 };
 
