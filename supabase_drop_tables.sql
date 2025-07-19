@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS hourly_responses;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS areas;
