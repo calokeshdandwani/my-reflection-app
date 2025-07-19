@@ -5,7 +5,9 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Supabase URL or Anon Key is not set in environment variables. Please check your .env file.');
-  // You might want to throw an error or handle this more gracefully in a production app
+} else {
+  console.log('Supabase URL loaded:', supabaseUrl ? 'Yes' : 'No');
+  console.log('Supabase Anon Key loaded:', supabaseAnonKey ? 'Yes' : 'No');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
