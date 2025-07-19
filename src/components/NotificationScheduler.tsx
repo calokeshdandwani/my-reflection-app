@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import * as dateFnsTz from "date-fns-tz"; // Changed import style
+import { utcToZonedTime } from "date-fns-tz"; // Corrected import style
 import { saveToLocalStorage, loadFromLocalStorage } from "@/lib/storage";
 
 const NOTIFICATION_PERMISSION_KEY = "notificationPermission";
@@ -19,7 +19,7 @@ const NotificationScheduler: React.FC = () => {
 
     const scheduleNotification = () => {
       const now = new Date();
-      const nowIST = dateFnsTz.utcToZonedTime(now, "Asia/Kolkata"); // Used dateFnsTz.utcToZonedTime
+      const nowIST = utcToZonedTime(now, "Asia/Kolkata"); // Used utcToZonedTime directly
 
       const currentHourIST = nowIST.getHours();
       const currentMinutesIST = nowIST.getMinutes();
@@ -31,7 +31,7 @@ const NotificationScheduler: React.FC = () => {
 
         if (lastNotificationTime) {
           const lastNotifiedDate = new Date(lastNotificationTime);
-          const lastNotifiedIST = dateFnsTz.utcToZonedTime(lastNotifiedDate, "Asia/Kolkata");
+          const lastNotifiedIST = utcToZonedTime(lastNotifiedDate, "Asia/Kolkata");
           
           // Check if an hour has passed since the last notification
           // and if it's a new hour (e.g., notified at 8:05, next at 9:00, not 8:50)
