@@ -1,7 +1,7 @@
 import React from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import AreaList from "./targets/AreaList"; // Import from new location
-import TaskList from "./targets/TaskList"; // Import from new location
+import AreaList from "./targets/AreaList";
+import TaskList from "./targets/TaskList";
 import { Area, Task } from "@/types";
 import { loadState, saveState } from "@/lib/storage";
 import { v4 as uuidv4 } from "uuid";
@@ -19,7 +19,7 @@ const TargetsPage = () => {
     if (storedAreas) {
       setAreas(storedAreas);
       if (storedAreas.length > 0) {
-        setSelectedAreaId(storedAreas[0].id); // Select the first area by default
+        setSelectedAreaId(storedAreas[0].id);
       }
     }
     if (storedTasks) {
@@ -45,14 +45,14 @@ const TargetsPage = () => {
     setAreas((prevAreas) => {
       const updatedAreas = [...prevAreas, newArea];
       if (selectedAreaId === null) {
-        setSelectedAreaId(newArea.id); // Select the new area if none was selected
+        setSelectedAreaId(newArea.id);
       }
       return updatedAreas;
     });
     toast.success(`Area "${name}" added!`);
   };
 
-  const handleAddTask = (name: string, priority: number, parentId?: string) => { // Updated to accept parentId
+  const handleAddTask = (name: string, priority: number, parentId?: string) => {
     if (!selectedAreaId) {
       toast.error("Please select an area first.");
       return;
@@ -64,7 +64,7 @@ const TargetsPage = () => {
       priority,
       completed: false,
       createdAt: new Date().toISOString(),
-      parentId: parentId, // Assign parentId
+      parentId: parentId,
     };
     setTasks((prevTasks) => [...prevTasks, newTask]);
     toast.success(`Task "${name}" added to selected area!`);
@@ -93,10 +93,10 @@ const TargetsPage = () => {
     toast.success("Task deleted!");
   };
 
-  const handleEditTask = (taskId: string, newName: string) => {
+  const handleEditTask = (taskId: string, newName: string, newPriority: number) => { // Updated to accept newPriority
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
-        task.id === taskId ? { ...task, name: newName } : task,
+        task.id === taskId ? { ...task, name: newName, priority: newPriority } : task, // Update priority
       ),
     );
     toast.success("Task updated!");
@@ -122,8 +122,8 @@ const TargetsPage = () => {
             tasks={filteredTasks}
             onAddTask={handleAddTask}
             onToggleTaskCompletion={handleToggleTaskCompletion}
-            onDeleteTask={handleDeleteTask} // Pass delete handler
-            onEditTask={handleEditTask}     // Pass edit handler
+            onDeleteTask={handleDeleteTask}
+            onEditTask={handleEditTask}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">

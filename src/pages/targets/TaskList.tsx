@@ -3,7 +3,7 @@ import { Task } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Star, Pencil, Trash, Check, X, ChevronDown, ChevronRight } from "lucide-react"; // Import new icons
+import { Plus, Star, Pencil, Trash, Check, X, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -12,7 +12,7 @@ interface TaskListProps {
   onAddTask: (name: string, priority: number, parentId?: string) => void;
   onToggleTaskCompletion: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
-  onEditTask: (taskId: string, newName: string) => void;
+  onEditTask: (taskId: string, newName: string, newPriority: number) => void; // Updated prop signature
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -26,8 +26,9 @@ const TaskList: React.FC<TaskListProps> = ({
   const [newTaskPriority, setNewTaskPriority] = React.useState(3);
   const [editingTaskId, setEditingTaskId] = React.useState<string | null>(null);
   const [editedTaskName, setEditedTaskName] = React.useState("");
+  const [editedTaskPriority, setEditedTaskPriority] = React.useState(3); // New state for editing priority
   const [addingSubTaskFor, setAddingSubTaskFor] = React.useState<string | null>(null);
-  const [expandedTasks, setExpandedTasks] = React.useState<Set<string>>(new Set()); // State for expanded parent tasks
+  const [expandedTasks, setExpandedTasks] = React.useState<Set<string>>(new Set());
 
   const handleAddTask = (parentId?: string) => {
     if (newTaskName.trim()) {
@@ -36,7 +37,7 @@ const TaskList: React.FC<TaskListProps> = ({
       setNewTaskPriority(3);
       setAddingSubTaskFor(null);
       if (parentId) {
-        setExpandedTasks(prev => new Set(prev).add(parentId)); // Expand parent if sub-task added
+        setExpandedTasks(prev => new Set(prev).add(parentId));
       }
     }
   };
@@ -44,26 +45,29 @@ const TaskList: React.FC<TaskListProps> = ({
   const handleEditClick = (task: Task) => {
     setEditingTaskId(task.id);
     setEditedTaskName(task.name);
+    setEditedTaskPriority(task.priority); // Set initial priority for editing
   };
 
   const handleSaveEdit = (taskId: string) => {
     if (editedTaskName.trim()) {
-      onEditTask(taskId, editedTaskName.trim());
+      onEditTask(taskId, editedTaskName.trim(), editedTaskPriority); // Pass new priority
       setEditingTaskId(null);
       setEditedTaskName("");
+      setEditedTaskPriority(3); // Reset
     }
   };
 
   const handleCancelEdit = () => {
     setEditingTaskId(null);
     setEditedTaskName("");
+    setEditedTaskPriority(3); // Reset
   };
 
   const handleAddSubTaskClick = (parentId: string) => {
     setAddingSubTaskFor(parentId);
     setNewTaskName("");
     setNewTaskPriority(3);
-    setExpandedTasks(prev => new Set(prev).add(parentId)); // Ensure parent is expanded when adding sub-task
+    setExpandedTasks(prev => new Set(prev).add(parentId));
   };
 
   const toggleExpand = (taskId: string) => {
@@ -78,7 +82,6 @@ const TaskList: React.FC<TaskListProps> = ({
     });
   };
 
-  // Sort tasks: 5-star pending, then other pending by creation, then completed by completion date
   const sortTasks = (tasksToSort: Task[]) => {
     return [...tasksToSort].sort((a, b) => {
       if (a.completed && !b.completed) return 1;
@@ -109,7 +112,7 @@ const TaskList: React.FC<TaskListProps> = ({
           className={cn(
             "flex flex-col p-3 border rounded-md bg-card text-card-foreground",
             task.completed && "opacity-60",
-            level > 0 && `ml-${level * 6} border-l-2 border-gray-200 pl-3`, // Indentation for sub-tasks
+            level > 0 && `ml-${level * 6} border-l-2 border-gray-200 pl-3`,
           )}
         >
           <div className="flex items-center justify-between w-full">
@@ -120,12 +123,26 @@ const TaskList: React.FC<TaskListProps> = ({
                 onCheckedChange={() => onToggleTaskCompletion(task.id)}
               />
               {editingTaskId === task.id ? (
-                <Input
-                  value={editedTaskName}
-                  onChange={(e) => setEditedTaskName(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSaveEdit(task.id)}
-                  className="flex-1"
-                />
+                <div className="flex items-center flex-1 gap-2">
+                  <Input
+                    value={editedTaskName}
+                    onChange={(e) => setEditedTaskName(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSaveEdit(task.id)}
+                    className="flex-1"
+                  />
+                  <div className="flex items-center">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={cn(
+                          "h-5 w-5 cursor-pointer",
+                          star <= editedTaskPriority ? "text-yellow-400 fill-yellow-400" : "text-gray-300",
+                        )}
+                        onClick={() => setEditedTaskPriority(star)}
+                      />
+                    ))}
+                  </div>
+                </div>
               ) : (
                 <label
                   htmlFor={`task-${task.id}`}
@@ -170,9 +187,9 @@ const TaskList: React.FC<TaskListProps> = ({
                     <Trash className="h-4 w-4 text-red-500" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => handleAddSubTaskClick(task.id)}>
-                    <Plus className="h-3.5 w-3.5" /> {/* Smaller icon size */}
+                    <Plus className="h-3.5 w-3.5" />
                   </Button>
-                  {hasSubTasks && ( // Moved expand button here
+                  {hasSubTasks && (
                     <Button variant="ghost" size="icon" onClick={() => toggleExpand(task.id)}>
                       {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </Button>
@@ -188,7 +205,7 @@ const TaskList: React.FC<TaskListProps> = ({
           )}
         </div>
         {isExpanded && hasSubTasks && (
-          <div className="space-y-4 mt-4"> {/* Add margin-top for spacing between parent and first sub-task */}
+          <div className="space-y-4 mt-4">
             {subTasks.map(subTask => renderTaskItem(subTask, level + 1))}
           </div>
         )}
@@ -232,7 +249,7 @@ const TaskList: React.FC<TaskListProps> = ({
       </div>
 
       <div className="space-y-4">
-        {topLevelTasks.length === 0 && tasks.length === 0 ? ( // Check if no tasks at all
+        {topLevelTasks.length === 0 && tasks.length === 0 ? (
           <p className="text-muted-foreground">No tasks yet. Add one above!</p>
         ) : (
           topLevelTasks.map(task => renderTaskItem(task))
