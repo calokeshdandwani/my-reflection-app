@@ -86,7 +86,7 @@ export const deleteSupabaseData = async (
     }
     return true;
   } catch (error) {
-    console.error(`Unexpected error deleting data from ${tableName}:`, error);
+      console.error(`Unexpected error deleting data from ${tableName}:`, error);
     return false;
   }
 };
@@ -96,10 +96,10 @@ export const loadAreas = async (): Promise<Area[] | undefined> => {
   return loadSupabaseData<Area>("areas", "created_at", true);
 };
 
-export const saveArea = async (area: Omit<Area, "id" | "createdAt">): Promise<Area | undefined> => {
+export const saveArea = async (area: Omit<Area, "id" | "created_at">): Promise<Area | undefined> => {
   const newArea: Area = {
     id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString(), // Corrected to snake_case
     ...area,
   };
   return saveSupabaseData<Area>("areas", newArea);
@@ -109,10 +109,10 @@ export const loadTasks = async (): Promise<Task[] | undefined> => {
   return loadSupabaseData<Task>("tasks", "created_at", true);
 };
 
-export const saveTask = async (task: Omit<Task, "id" | "createdAt" | "completed" | "completedAt">): Promise<Task | undefined> => {
+export const saveTask = async (task: Omit<Task, "id" | "created_at" | "completed" | "completed_at">): Promise<Task | undefined> => {
   const newTask: Task = {
     id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString(), // Corrected to snake_case
     completed: false,
     ...task,
   };
