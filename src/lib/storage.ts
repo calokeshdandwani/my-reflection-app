@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient";
 import { Area, Task, HourlyResponse } from "@/types";
+import { toast } from "sonner"; // Import toast for notifications
 
 // Generic function to fetch data from Supabase
 export const loadSupabaseData = async <T>(
@@ -15,11 +16,13 @@ export const loadSupabaseData = async <T>(
 
     if (error) {
       console.error(`Error loading data from ${tableName}:`, error);
+      toast.error(`Failed to load ${tableName}: ${error.message}`); // Show Supabase error
       return undefined;
     }
     return data as T[];
-  } catch (error) {
+  } catch (error: any) { // Catch unexpected errors
     console.error(`Unexpected error loading data from ${tableName}:`, error);
+    toast.error(`An unexpected error occurred while loading ${tableName}: ${error.message}`);
     return undefined;
   }
 };
@@ -38,11 +41,13 @@ export const saveSupabaseData = async <T>(
 
     if (error) {
       console.error(`Error saving data to ${tableName}:`, error);
+      toast.error(`Failed to save to ${tableName}: ${error.message}`); // Show Supabase error
       return undefined;
     }
     return savedData as T;
-  } catch (error) {
+  } catch (error: any) { // Catch unexpected errors
     console.error(`Unexpected error saving data to ${tableName}:`, error);
+    toast.error(`An unexpected error occurred while saving to ${tableName}: ${error.message}`);
     return undefined;
   }
 };
@@ -63,11 +68,13 @@ export const updateSupabaseData = async <T>(
 
     if (error) {
       console.error(`Error updating data in ${tableName}:`, error);
+      toast.error(`Failed to update ${tableName}: ${error.message}`); // Show Supabase error
       return undefined;
     }
     return data as T;
-  } catch (error) {
+  } catch (error: any) { // Catch unexpected errors
     console.error(`Unexpected error updating data in ${tableName}:`, error);
+    toast.error(`An unexpected error occurred while updating ${tableName}: ${error.message}`);
     return undefined;
   }
 };
@@ -82,11 +89,13 @@ export const deleteSupabaseData = async (
 
     if (error) {
       console.error(`Error deleting data from ${tableName}:`, error);
+      toast.error(`Failed to delete from ${tableName}: ${error.message}`); // Show Supabase error
       return false;
     }
     return true;
-  } catch (error) {
+  } catch (error: any) { // Catch unexpected errors
       console.error(`Unexpected error deleting data from ${tableName}:`, error);
+      toast.error(`An unexpected error occurred while deleting from ${tableName}: ${error.message}`);
     return false;
   }
 };
@@ -99,7 +108,7 @@ export const loadAreas = async (): Promise<Area[] | undefined> => {
 export const saveArea = async (area: Omit<Area, "id" | "created_at">): Promise<Area | undefined> => {
   const newArea: Area = {
     id: crypto.randomUUID(),
-    created_at: new Date().toISOString(), // Corrected to snake_case
+    created_at: new Date().toISOString(),
     ...area,
   };
   return saveSupabaseData<Area>("areas", newArea);
@@ -112,7 +121,7 @@ export const loadTasks = async (): Promise<Task[] | undefined> => {
 export const saveTask = async (task: Omit<Task, "id" | "created_at" | "completed" | "completed_at">): Promise<Task | undefined> => {
   const newTask: Task = {
     id: crypto.randomUUID(),
-    created_at: new Date().toISOString(), // Corrected to snake_case
+    created_at: new Date().toISOString(),
     completed: false,
     ...task,
   };
