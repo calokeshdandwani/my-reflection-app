@@ -3,103 +3,166 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import AreaList from "./targets/AreaList";
 import TaskList from "./targets/TaskList";
 import { Area, Task } from "@/types";
-import { loadState, saveState } from "@/lib/storage";
-import { v4 as uuidv4 } from "uuid";
+import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 
 const TargetsPage = () => {
   const [areas, setAreas] = React.useState<Area[]>([]);
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [selectedAreaId, setSelectedAreaId] = React.useState<string | null>(null);
+  const [loadingAreas, setLoadingAreas] = React.useState(true);
+  const [loadingTasks, setLoadingTasks] = React.useState(true);
 
-  // Load state from localStorage on initial render
+  // Load areas from Supabase
   React.useEffect(() => {
-    const storedAreas = loadState<Area[]>("areas");
-    const storedTasks = loadState<Task[]>("tasks");
-    if (storedAreas) {
-      setAreas(storedAreas);
-      if (storedAreas.length > 0) {
-        setSelectedAreaId(storedAreas[0].id);
+    const fetchAreas = async () => {
+      setLoadingAreas(true);
+      const { data, error } = await supabase
+        .from("areas")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching areas:", error);
+        toast.error("Failed to load areas.");
+      } else {
+        setAreas(data as Area[]);
+        if (data.length > 0 && selectedAreaId === null) {
+          setSelectedAreaId(data[0].id);
+        }
       }
-    }
-    if (storedTasks) {
-      setTasks(storedTasks);
-    }
+      setLoadingAreas(false);
+    };
+
+    fetchAreas();
   }, []);
 
-  // Save state to localStorage whenever areas or tasks change
+  // Load tasks from Supabase
   React.useEffect(() => {
-    saveState("areas", areas);
-  }, [areas]);
+    const fetchTasks = async () => {
+      setLoadingTasks(true);
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: true });
 
-  React.useEffect(() => {
-    saveState("tasks", tasks);
-  }, [tasks]);
-
-  const handleAddArea = (name: string) => {
-    const newArea: Area = {
-      id: uuidv4(),
-      name,
-      createdAt: new Date().toISOString(),
-    };
-    setAreas((prevAreas) => {
-      const updatedAreas = [...prevAreas, newArea];
-      if (selectedAreaId === null) {
-        setSelectedAreaId(newArea.id);
+      if (error) {
+        console.error("Error fetching tasks:", error);
+        toast.error("Failed to load tasks.");
+      } else {
+        setTasks(data as Task[]);
       }
-      return updatedAreas;
-    });
-    toast.success(`Area "${name}" added!`);
+      setLoadingTasks(false);
+    };
+
+    fetchTasks();
+  }, []);
+
+  const handleAddArea = async (name: string) => {
+    const { data, error } = await supabase
+      .from("areas")
+      .insert({ name })
+      .select();
+
+    if (error) {
+      console.error("Error adding area:", error);
+      toast.error("Failed to add area.");
+    } else if (data && data.length > 0) {
+      const newArea: Area = data[0];
+      setAreas((prevAreas) => {
+        const updatedAreas = [...prevAreas, newArea];
+        if (selectedAreaId === null) {
+          setSelectedAreaId(newArea.id);
+        }
+        return updatedAreas;
+      });
+      toast.success(`Area "${name}" added!`);
+    }
   };
 
-  const handleAddTask = (name: string, priority: number, parentId?: string) => {
+  const handleAddTask = async (name: string, priority: number, parentId?: string) => {
     if (!selectedAreaId) {
       toast.error("Please select an area first.");
       return;
     }
-    const newTask: Task = {
-      id: uuidv4(),
-      areaId: selectedAreaId,
-      name,
-      priority,
-      completed: false,
-      createdAt: new Date().toISOString(),
-      parentId: parentId,
-    };
-    setTasks((prevTasks) => [...prevTasks, newTask]);
-    toast.success(`Task "${name}" added to selected area!`);
-  };
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert({ area_id: selectedAreaId, name, priority, parent_id: parentId || null })
+      .select();
 
-  const handleToggleTaskCompletion = (taskId: string) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              completed: !task.completed,
-              completedAt: !task.completed ? new Date().toISOString() : undefined,
-            }
-          : task,
-      ),
-    );
-    const toggledTask = tasks.find(task => task.id === taskId);
-    if (toggledTask) {
-      toast.info(`Task "${toggledTask.name}" marked as ${toggledTask.completed ? "pending" : "completed"}!`);
+    if (error) {
+      console.error("Error adding task:", error);
+      toast.error("Failed to add task.");
+    } else if (data && data.length > 0) {
+      const newTask: Task = data[0];
+      setTasks((prevTasks) => [...prevTasks, newTask]);
+      toast.success(`Task "${name}" added to selected area!`);
     }
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
-    toast.success("Task deleted!");
+  const handleToggleTaskCompletion = async (taskId: string) => {
+    const taskToUpdate = tasks.find(task => task.id === taskId);
+    if (!taskToUpdate) return;
+
+    const newCompletedStatus = !taskToUpdate.completed;
+    const newCompletedAt = newCompletedStatus ? new Date().toISOString() : null;
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({ completed: newCompletedStatus, completed_at: newCompletedAt })
+      .eq("id", taskId);
+
+    if (error) {
+      console.error("Error updating task completion:", error);
+      toast.error("Failed to update task status.");
+    } else {
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                completed: newCompletedStatus,
+                completedAt: newCompletedAt || undefined,
+              }
+            : task,
+        ),
+      );
+      toast.info(`Task "${taskToUpdate.name}" marked as ${newCompletedStatus ? "completed" : "pending"}!`);
+    }
   };
 
-  const handleEditTask = (taskId: string, newName: string, newPriority: number) => { // Updated to accept newPriority
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, name: newName, priority: newPriority } : task, // Update priority
-      ),
-    );
-    toast.success("Task updated!");
+  const handleDeleteTask = async (taskId: string) => {
+    const { error } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("id", taskId);
+
+    if (error) {
+      console.error("Error deleting task:", error);
+      toast.error("Failed to delete task.");
+    } else {
+      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+      toast.success("Task deleted!");
+    }
+  };
+
+  const handleEditTask = async (taskId: string, newName: string, newPriority: number) => {
+    const { error } = await supabase
+      .from("tasks")
+      .update({ name: newName, priority: newPriority })
+      .eq("id", taskId);
+
+    if (error) {
+      console.error("Error editing task:", error);
+      toast.error("Failed to update task.");
+    } else {
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === taskId ? { ...task, name: newName, priority: newPriority } : task,
+        ),
+      );
+      toast.success("Task updated!");
+    }
   };
 
   const filteredTasks = selectedAreaId
@@ -109,15 +172,21 @@ const TargetsPage = () => {
   return (
     <div className="flex h-full">
       <aside className="w-64 border-r bg-sidebar text-sidebar-foreground p-4 flex flex-col">
-        <AreaList
-          areas={areas}
-          selectedAreaId={selectedAreaId}
-          onSelectArea={setSelectedAreaId}
-          onAddArea={handleAddArea}
-        />
+        {loadingAreas ? (
+          <p className="text-muted-foreground">Loading areas...</p>
+        ) : (
+          <AreaList
+            areas={areas}
+            selectedAreaId={selectedAreaId}
+            onSelectArea={setSelectedAreaId}
+            onAddArea={handleAddArea}
+          />
+        )}
       </aside>
       <main className="flex-1 p-6">
-        {selectedAreaId ? (
+        {loadingTasks ? (
+          <p className="text-muted-foreground text-center mt-8">Loading tasks...</p>
+        ) : selectedAreaId ? (
           <TaskList
             tasks={filteredTasks}
             onAddTask={handleAddTask}

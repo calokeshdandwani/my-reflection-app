@@ -2,38 +2,57 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
-import { loadState, saveState } from "@/lib/storage";
 import { MadeWithDyad } from "@/components/made-with-dyad";
+import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
 interface HourlyResponse {
+  id: string;
   timestamp: string; // ISO string date
   response: string;
 }
 
 const HomePage: React.FC = () => {
   const [currentResponse, setCurrentResponse] = React.useState("");
-  // Responses are no longer displayed directly on this page, but still saved
   const [responses, setResponses] = React.useState<HourlyResponse[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const storedResponses = loadState<HourlyResponse[]>("hourlyResponses");
-    if (storedResponses) {
-      setResponses(storedResponses);
-    }
+    const fetchResponses = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("hourly_responses")
+        .select("*")
+        .order("timestamp", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching hourly responses:", error);
+        toast.error("Failed to load reflections.");
+      } else {
+        setResponses(data as HourlyResponse[]);
+      }
+      setLoading(false);
+    };
+
+    fetchResponses();
   }, []);
 
-  React.useEffect(() => {
-    saveState("hourlyResponses", responses);
-  }, [responses]);
-
-  const handleSendResponse = () => {
+  const handleSendResponse = async () => {
     if (currentResponse.trim()) {
-      const newResponse: HourlyResponse = {
-        timestamp: new Date().toISOString(),
-        response: currentResponse.trim(),
-      };
-      setResponses((prevResponses) => [...prevResponses, newResponse]);
-      setCurrentResponse(""); // Clear input after sending
+      const { data, error } = await supabase
+        .from("hourly_responses")
+        .insert({ response: currentResponse.trim() })
+        .select();
+
+      if (error) {
+        console.error("Error saving response:", error);
+        toast.error("Failed to save your reflection.");
+      } else if (data && data.length > 0) {
+        const newResponse: HourlyResponse = data[0];
+        setResponses((prevResponses) => [newResponse, ...prevResponses]);
+        setCurrentResponse(""); // Clear input after sending
+        toast.success("Reflection saved!");
+      }
     }
   };
 
@@ -56,8 +75,9 @@ const HomePage: React.FC = () => {
           onChange={(e) => setCurrentResponse(e.target.value)}
           onKeyPress={(e) => e.key === "Enter" && handleSendResponse()}
           className="flex-1"
+          disabled={loading}
         />
-        <Button onClick={handleSendResponse} size="icon">
+        <Button onClick={handleSendResponse} size="icon" disabled={loading}>
           <Send className="h-4 w-4" />
         </Button>
       </div>
