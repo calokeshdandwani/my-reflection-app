@@ -1,6 +1,5 @@
 import React from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import Layout from "@/components/Layout";
 import AreaList from "@/components/AreaList";
 import TaskList from "@/components/TaskList";
 import { Area, Task } from "@/types";
@@ -8,7 +7,7 @@ import { loadState, saveState } from "@/lib/storage";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 
-const Index = () => {
+const TasksPage = () => { // Renamed from Index
   const [areas, setAreas] = React.useState<Area[]>([]);
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [selectedAreaId, setSelectedAreaId] = React.useState<string | null>(null);
@@ -93,16 +92,7 @@ const Index = () => {
     : [];
 
   return (
-    <Layout
-      sidebar={
-        <AreaList
-          areas={areas}
-          selectedAreaId={selectedAreaId}
-          onSelectArea={setSelectedAreaId}
-          onAddArea={handleAddArea}
-        />
-      }
-    >
+    <div className="flex flex-col h-full">
       {selectedAreaId ? (
         <TaskList
           tasks={filteredTasks}
@@ -116,8 +106,8 @@ const Index = () => {
         </div>
       )}
       <MadeWithDyad />
-    </Layout>
+    </div>
   );
 };
 
-export default Index;
+export default TasksPage;
