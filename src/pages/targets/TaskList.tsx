@@ -114,11 +114,6 @@ const TaskList: React.FC<TaskListProps> = ({
         >
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3 flex-1">
-              {hasSubTasks && (
-                <Button variant="ghost" size="icon" onClick={() => toggleExpand(task.id)} className="mr-1">
-                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                </Button>
-              )}
               <Checkbox
                 id={`task-${task.id}`}
                 checked={task.completed}
@@ -175,8 +170,13 @@ const TaskList: React.FC<TaskListProps> = ({
                     <Trash className="h-4 w-4 text-red-500" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => handleAddSubTaskClick(task.id)}>
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-3.5 w-3.5" /> {/* Smaller icon size */}
                   </Button>
+                  {hasSubTasks && ( // Moved expand button here
+                    <Button variant="ghost" size="icon" onClick={() => toggleExpand(task.id)}>
+                      {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </Button>
+                  )}
                 </>
               )}
             </div>
