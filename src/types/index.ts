@@ -6,6 +6,7 @@ export interface Task {
   completed: boolean;
   completedAt?: string; // ISO string date
   createdAt: string; // ISO string date
+  parentId?: string; // New: Optional parent ID for sub-tasks
 }
 
 export interface Area {

@@ -52,7 +52,7 @@ const TargetsPage = () => {
     toast.success(`Area "${name}" added!`);
   };
 
-  const handleAddTask = (name: string, priority: number) => {
+  const handleAddTask = (name: string, priority: number, parentId?: string) => { // Updated to accept parentId
     if (!selectedAreaId) {
       toast.error("Please select an area first.");
       return;
@@ -64,6 +64,7 @@ const TargetsPage = () => {
       priority,
       completed: false,
       createdAt: new Date().toISOString(),
+      parentId: parentId, // Assign parentId
     };
     setTasks((prevTasks) => [...prevTasks, newTask]);
     toast.success(`Task "${name}" added to selected area!`);
@@ -87,6 +88,20 @@ const TargetsPage = () => {
     }
   };
 
+  const handleDeleteTask = (taskId: string) => {
+    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+    toast.success("Task deleted!");
+  };
+
+  const handleEditTask = (taskId: string, newName: string) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === taskId ? { ...task, name: newName } : task,
+      ),
+    );
+    toast.success("Task updated!");
+  };
+
   const filteredTasks = selectedAreaId
     ? tasks.filter((task) => task.areaId === selectedAreaId)
     : [];
@@ -107,6 +122,8 @@ const TargetsPage = () => {
             tasks={filteredTasks}
             onAddTask={handleAddTask}
             onToggleTaskCompletion={handleToggleTaskCompletion}
+            onDeleteTask={handleDeleteTask} // Pass delete handler
+            onEditTask={handleEditTask}     // Pass edit handler
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">
