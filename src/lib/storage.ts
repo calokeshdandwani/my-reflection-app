@@ -1,3 +1,146 @@
+import { supabase } from "./supabaseClient";
+import { Area, Task, HourlyResponse } from "@/types";
+
+// Generic function to fetch data from Supabase
+export const loadSupabaseData = async <T>(
+  tableName: string,
+  orderByColumn: string = "created_at",
+  ascending: boolean = true,
+): Promise<T[] | undefined> => {
+  try {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select("*")
+      .order(orderByColumn, { ascending });
+
+    if (error) {
+      console.error(`Error loading data from ${tableName}:`, error);
+      return undefined;
+    }
+    return data as T[];
+  } catch (error) {
+    console.error(`Unexpected error loading data from ${tableName}:`, error);
+    return undefined;
+  }
+};
+
+// Generic function to save data to Supabase
+export const saveSupabaseData = async <T>(
+  tableName: string,
+  data: T,
+): Promise<T | undefined> => {
+  try {
+    const { data: savedData, error } = await supabase
+      .from(tableName)
+      .insert(data)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(`Error saving data to ${tableName}:`, error);
+      return undefined;
+    }
+    return savedData as T;
+  } catch (error) {
+    console.error(`Unexpected error saving data to ${tableName}:`, error);
+    return undefined;
+  }
+};
+
+// Generic function to update data in Supabase
+export const updateSupabaseData = async <T>(
+  tableName: string,
+  id: string,
+  updates: Partial<T>,
+): Promise<T | undefined> => {
+  try {
+    const { data, error } = await supabase
+      .from(tableName)
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(`Error updating data in ${tableName}:`, error);
+      return undefined;
+    }
+    return data as T;
+  } catch (error) {
+    console.error(`Unexpected error updating data in ${tableName}:`, error);
+    return undefined;
+  }
+};
+
+// Generic function to delete data from Supabase
+export const deleteSupabaseData = async (
+  tableName: string,
+  id: string,
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase.from(tableName).delete().eq("id", id);
+
+    if (error) {
+      console.error(`Error deleting data from ${tableName}:`, error);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error(`Unexpected error deleting data from ${tableName}:`, error);
+    return false;
+  }
+};
+
+// Specific functions for each data type
+export const loadAreas = async (): Promise<Area[] | undefined> => {
+  return loadSupabaseData<Area>("areas", "created_at", true);
+};
+
+export const saveArea = async (area: Omit<Area, "id" | "createdAt">): Promise<Area | undefined> => {
+  const newArea: Area = {
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    ...area,
+  };
+  return saveSupabaseData<Area>("areas", newArea);
+};
+
+export const loadTasks = async (): Promise<Task[] | undefined> => {
+  return loadSupabaseData<Task>("tasks", "created_at", true);
+};
+
+export const saveTask = async (task: Omit<Task, "id" | "createdAt" | "completed" | "completedAt">): Promise<Task | undefined> => {
+  const newTask: Task = {
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    completed: false,
+    ...task,
+  };
+  return saveSupabaseData<Task>("tasks", newTask);
+};
+
+export const updateTask = async (taskId: string, updates: Partial<Task>): Promise<Task | undefined> => {
+  return updateSupabaseData<Task>("tasks", taskId, updates);
+};
+
+export const deleteTask = async (taskId: string): Promise<boolean> => {
+  return deleteSupabaseData("tasks", taskId);
+};
+
+export const loadHourlyResponses = async (): Promise<HourlyResponse[] | undefined> => {
+  return loadSupabaseData<HourlyResponse>("hourly_responses", "timestamp", false); // Order by timestamp descending
+};
+
+export const saveHourlyResponse = async (response: Omit<HourlyResponse, "id" | "timestamp">): Promise<HourlyResponse | undefined> => {
+  const newResponse: HourlyResponse = {
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
+    ...response,
+  };
+  return saveSupabaseData<HourlyResponse>("hourly_responses", newResponse);
+};
+
+// Keep localStorage functions for NotificationScheduler if needed, or remove if not used elsewhere
 export const loadState = <T>(key: string): T | undefined => {
   try {
     const serializedState = localStorage.getItem(key);

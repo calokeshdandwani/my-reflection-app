@@ -2,38 +2,22 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
-import { loadState, saveState } from "@/lib/storage";
+import { saveHourlyResponse } from "@/lib/storage"; // Updated import
 import { MadeWithDyad } from "@/components/made-with-dyad";
-
-interface HourlyResponse {
-  timestamp: string; // ISO string date
-  response: string;
-}
+import { HourlyResponse } from "@/types"; // Import HourlyResponse interface
 
 const HomePage: React.FC = () => {
   const [currentResponse, setCurrentResponse] = React.useState("");
-  // Responses are no longer displayed directly on this page, but still saved
-  const [responses, setResponses] = React.useState<HourlyResponse[]>([]);
 
-  React.useEffect(() => {
-    const storedResponses = loadState<HourlyResponse[]>("hourlyResponses");
-    if (storedResponses) {
-      setResponses(storedResponses);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    saveState("hourlyResponses", responses);
-  }, [responses]);
-
-  const handleSendResponse = () => {
+  const handleSendResponse = async () => {
     if (currentResponse.trim()) {
-      const newResponse: HourlyResponse = {
-        timestamp: new Date().toISOString(),
+      const newResponse: Omit<HourlyResponse, "id" | "timestamp"> = {
         response: currentResponse.trim(),
       };
-      setResponses((prevResponses) => [...prevResponses, newResponse]);
-      setCurrentResponse(""); // Clear input after sending
+      const savedResponse = await saveHourlyResponse(newResponse);
+      if (savedResponse) {
+        setCurrentResponse(""); // Clear input after sending
+      }
     }
   };
 

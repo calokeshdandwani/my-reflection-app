@@ -1,6 +1,6 @@
 import React from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { loadState } from "@/lib/storage";
+import { loadHourlyResponses, loadTasks } from "@/lib/storage"; // Updated imports
 import { format, isSameDay } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,12 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Task } from "@/types"; // Import Task interface
-
-interface HourlyResponse {
-  timestamp: string; // ISO string date
-  response: string;
-}
+import { Task, HourlyResponse } from "@/types"; // Import Task and HourlyResponse interfaces
 
 const SummaryPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
@@ -21,14 +16,17 @@ const SummaryPage: React.FC = () => {
   const [completedTasks, setCompletedTasks] = React.useState<Task[]>([]);
 
   React.useEffect(() => {
-    const storedResponses = loadState<HourlyResponse[]>("hourlyResponses");
-    if (storedResponses) {
-      setHourlyResponses(storedResponses);
-    }
-    const storedTasks = loadState<Task[]>("tasks");
-    if (storedTasks) {
-      setCompletedTasks(storedTasks);
-    }
+    const fetchSummaryData = async () => {
+      const storedResponses = await loadHourlyResponses();
+      if (storedResponses) {
+        setHourlyResponses(storedResponses);
+      }
+      const storedTasks = await loadTasks();
+      if (storedTasks) {
+        setCompletedTasks(storedTasks);
+      }
+    };
+    fetchSummaryData();
   }, []);
 
   const filteredResponses = React.useMemo(() => {
@@ -41,8 +39,8 @@ const SummaryPage: React.FC = () => {
   const filteredCompletedTasks = React.useMemo(() => {
     if (!selectedDate) return [];
     return completedTasks.filter(task =>
-      task.completed && task.completedAt && isSameDay(new Date(task.completedAt), selectedDate)
-    ).sort((a, b) => new Date(a.completedAt!).getTime() - new Date(b.completedAt!).getTime()); // Sort by completion time
+      task.completed && task.completed_at && isSameDay(new Date(task.completed_at), selectedDate) // Use task.completed_at
+    ).sort((a, b) => new Date(a.completed_at!).getTime() - new Date(b.completed_at!).getTime()); // Sort by completion time
   }, [completedTasks, selectedDate]);
 
   return (
@@ -104,7 +102,7 @@ const SummaryPage: React.FC = () => {
                   <div key={index} className="bg-green-50 p-3 rounded-md border border-green-200">
                     <p className="font-medium">{task.name}</p>
                     <p className="text-sm text-gray-600 mt-1">
-                      Completed at: {task.completedAt ? format(new Date(task.completedAt), "HH:mm") : "N/A"}
+                      Completed at: {task.completed_at ? format(new Date(task.completed_at), "HH:mm") : "N/A"}
                     </p>
                   </div>
                 ))}

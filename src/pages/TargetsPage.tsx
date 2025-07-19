@@ -3,8 +3,7 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import AreaList from "./targets/AreaList";
 import TaskList from "./targets/TaskList";
 import { Area, Task } from "@/types";
-import { loadState, saveState } from "@/lib/storage";
-import { v4 as uuidv4 } from "uuid";
+import { loadAreas, saveArea, loadTasks, saveTask, updateTask, deleteTask } from "@/lib/storage"; // Updated imports
 import { toast } from "sonner";
 
 const TargetsPage = () => {
@@ -12,98 +11,111 @@ const TargetsPage = () => {
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [selectedAreaId, setSelectedAreaId] = React.useState<string | null>(null);
 
-  // Load state from localStorage on initial render
+  // Load state from Supabase on initial render
   React.useEffect(() => {
-    const storedAreas = loadState<Area[]>("areas");
-    const storedTasks = loadState<Task[]>("tasks");
-    if (storedAreas) {
-      setAreas(storedAreas);
-      if (storedAreas.length > 0) {
-        setSelectedAreaId(storedAreas[0].id);
+    const fetchInitialData = async () => {
+      const storedAreas = await loadAreas();
+      if (storedAreas) {
+        setAreas(storedAreas);
+        if (storedAreas.length > 0) {
+          setSelectedAreaId(storedAreas[0].id);
+        }
       }
-    }
-    if (storedTasks) {
-      setTasks(storedTasks);
-    }
+      const storedTasks = await loadTasks();
+      if (storedTasks) {
+        setTasks(storedTasks);
+      }
+    };
+    fetchInitialData();
   }, []);
 
-  // Save state to localStorage whenever areas or tasks change
-  React.useEffect(() => {
-    saveState("areas", areas);
-  }, [areas]);
-
-  React.useEffect(() => {
-    saveState("tasks", tasks);
-  }, [tasks]);
-
-  const handleAddArea = (name: string) => {
-    const newArea: Area = {
-      id: uuidv4(),
+  const handleAddArea = async (name: string) => {
+    const newArea: Omit<Area, "id" | "created_at"> = { // Use created_at as per Supabase schema
       name,
-      createdAt: new Date().toISOString(),
     };
-    setAreas((prevAreas) => {
-      const updatedAreas = [...prevAreas, newArea];
-      if (selectedAreaId === null) {
-        setSelectedAreaId(newArea.id);
-      }
-      return updatedAreas;
-    });
-    toast.success(`Area "${name}" added!`);
+    const savedArea = await saveArea(newArea);
+    if (savedArea) {
+      setAreas((prevAreas) => {
+        const updatedAreas = [...prevAreas, savedArea];
+        if (selectedAreaId === null) {
+          setSelectedAreaId(savedArea.id);
+        }
+        return updatedAreas;
+      });
+      toast.success(`Area "${name}" added!`);
+    } else {
+      toast.error("Failed to add area.");
+    }
   };
 
-  const handleAddTask = (name: string, priority: number, parentId?: string) => {
+  const handleAddTask = async (name: string, priority: number, parentId?: string) => {
     if (!selectedAreaId) {
       toast.error("Please select an area first.");
       return;
     }
-    const newTask: Task = {
-      id: uuidv4(),
-      areaId: selectedAreaId,
+    const newTask: Omit<Task, "id" | "created_at" | "completed" | "completed_at"> = { // Use created_at, completed_at
+      area_id: selectedAreaId, // Use area_id
       name,
       priority,
-      completed: false,
-      createdAt: new Date().toISOString(),
-      parentId: parentId,
+      parent_id: parentId, // Use parent_id
     };
-    setTasks((prevTasks) => [...prevTasks, newTask]);
-    toast.success(`Task "${name}" added to selected area!`);
-  };
-
-  const handleToggleTaskCompletion = (taskId: string) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              completed: !task.completed,
-              completedAt: !task.completed ? new Date().toISOString() : undefined,
-            }
-          : task,
-      ),
-    );
-    const toggledTask = tasks.find(task => task.id === taskId);
-    if (toggledTask) {
-      toast.info(`Task "${toggledTask.name}" marked as ${toggledTask.completed ? "pending" : "completed"}!`);
+    const savedTask = await saveTask(newTask);
+    if (savedTask) {
+      setTasks((prevTasks) => [...prevTasks, savedTask]);
+      toast.success(`Task "${name}" added to selected area!`);
+    } else {
+      toast.error("Failed to add task.");
     }
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
-    toast.success("Task deleted!");
+  const handleToggleTaskCompletion = async (taskId: string) => {
+    const taskToToggle = tasks.find(task => task.id === taskId);
+    if (!taskToToggle) return;
+
+    const newCompletedStatus = !taskToToggle.completed;
+    const updatedTask = await updateTask(taskId, {
+      completed: newCompletedStatus,
+      completed_at: newCompletedStatus ? new Date().toISOString() : null, // Use completed_at
+    });
+
+    if (updatedTask) {
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === taskId ? updatedTask : task,
+        ),
+      );
+      toast.info(`Task "${updatedTask.name}" marked as ${updatedTask.completed ? "completed" : "pending"}!`);
+    } else {
+      toast.error("Failed to update task completion status.");
+    }
   };
 
-  const handleEditTask = (taskId: string, newName: string, newPriority: number) => { // Updated to accept newPriority
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, name: newName, priority: newPriority } : task, // Update priority
-      ),
-    );
-    toast.success("Task updated!");
+  const handleDeleteTask = async (taskId: string) => {
+    const success = await deleteTask(taskId);
+    if (success) {
+      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+      toast.success("Task deleted!");
+    } else {
+      toast.error("Failed to delete task.");
+    }
+  };
+
+  const handleEditTask = async (taskId: string, newName: string, newPriority: number) => {
+    const updatedTask = await updateTask(taskId, { name: newName, priority: newPriority });
+    if (updatedTask) {
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === taskId ? updatedTask : task,
+        ),
+      );
+      toast.success("Task updated!");
+    } else {
+      toast.error("Failed to update task.");
+    }
   };
 
   const filteredTasks = selectedAreaId
-    ? tasks.filter((task) => task.areaId === selectedAreaId)
+    ? tasks.filter((task) => task.area_id === selectedAreaId) // Use area_id
     : [];
 
   return (

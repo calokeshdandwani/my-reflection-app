@@ -1,33 +1,28 @@
 import React from "react";
-import { loadState } from "@/lib/storage";
+import { loadHourlyResponses, loadTasks } from "@/lib/storage"; // Updated imports
 import { format } from "date-fns";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button"; // Import Button component
-import { Task } from "@/types"; // Import Task interface
-
-interface HourlyResponse {
-  timestamp: string; // ISO string date
-  response: string;
-}
+import { Button } from "@/components/ui/button";
+import { Task, HourlyResponse } from "@/types"; // Import Task and HourlyResponse interfaces
 
 const HistoryPage: React.FC = () => {
   const [responses, setResponses] = React.useState<HourlyResponse[]>([]);
-  const [tasks, setTasks] = React.useState<Task[]>([]); // State to hold all tasks for export
+  const [tasks, setTasks] = React.useState<Task[]>([]);
 
   React.useEffect(() => {
-    const storedResponses = loadState<HourlyResponse[]>("hourlyResponses");
-    if (storedResponses) {
-      // Sort responses from newest to oldest
-      const sortedResponses = [...storedResponses].sort((a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-      setResponses(sortedResponses);
-    }
-    const storedTasks = loadState<Task[]>("tasks");
-    if (storedTasks) {
-      setTasks(storedTasks);
-    }
+    const fetchHistoryData = async () => {
+      const storedResponses = await loadHourlyResponses();
+      if (storedResponses) {
+        // Responses are already sorted by timestamp descending from loadHourlyResponses
+        setResponses(storedResponses);
+      }
+      const storedTasks = await loadTasks();
+      if (storedTasks) {
+        setTasks(storedTasks);
+      }
+    };
+    fetchHistoryData();
   }, []);
 
   const exportToCsv = (data: any[], filename: string, headers: string[]) => {
@@ -68,13 +63,13 @@ const HistoryPage: React.FC = () => {
   const handleExportTasks = () => {
     const dataToExport = tasks.map(t => ({
       ID: t.id,
-      AreaID: t.areaId,
+      AreaID: t.area_id, // Use area_id as per Supabase schema
       Name: t.name,
       Priority: t.priority,
       Completed: t.completed ? 'Yes' : 'No',
-      CompletedAt: t.completedAt ? format(new Date(t.completedAt), "yyyy-MM-dd HH:mm:ss") : '',
-      CreatedAt: format(new Date(t.createdAt), "yyyy-MM-dd HH:mm:ss"),
-      ParentID: t.parentId || '',
+      CompletedAt: t.completed_at ? format(new Date(t.completed_at), "yyyy-MM-dd HH:mm:ss") : '', // Use completed_at
+      CreatedAt: format(new Date(t.created_at), "yyyy-MM-dd HH:mm:ss"), // Use created_at
+      ParentID: t.parent_id || '', // Use parent_id
     }));
     exportToCsv(dataToExport, "all_tasks.csv", ["ID", "AreaID", "Name", "Priority", "Completed", "CompletedAt", "CreatedAt", "ParentID"]);
   };

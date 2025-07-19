@@ -12,7 +12,7 @@ interface TaskListProps {
   onAddTask: (name: string, priority: number, parentId?: string) => void;
   onToggleTaskCompletion: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
-  onEditTask: (taskId: string, newName: string, newPriority: number) => void; // Updated prop signature
+  onEditTask: (taskId: string, newName: string, newPriority: number) => void;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -26,7 +26,7 @@ const TaskList: React.FC<TaskListProps> = ({
   const [newTaskPriority, setNewTaskPriority] = React.useState(3);
   const [editingTaskId, setEditingTaskId] = React.useState<string | null>(null);
   const [editedTaskName, setEditedTaskName] = React.useState("");
-  const [editedTaskPriority, setEditedTaskPriority] = React.useState(3); // New state for editing priority
+  const [editedTaskPriority, setEditedTaskPriority] = React.useState(3);
   const [addingSubTaskFor, setAddingSubTaskFor] = React.useState<string | null>(null);
   const [expandedTasks, setExpandedTasks] = React.useState<Set<string>>(new Set());
 
@@ -45,22 +45,22 @@ const TaskList: React.FC<TaskListProps> = ({
   const handleEditClick = (task: Task) => {
     setEditingTaskId(task.id);
     setEditedTaskName(task.name);
-    setEditedTaskPriority(task.priority); // Set initial priority for editing
+    setEditedTaskPriority(task.priority);
   };
 
   const handleSaveEdit = (taskId: string) => {
     if (editedTaskName.trim()) {
-      onEditTask(taskId, editedTaskName.trim(), editedTaskPriority); // Pass new priority
+      onEditTask(taskId, editedTaskName.trim(), editedTaskPriority);
       setEditingTaskId(null);
       setEditedTaskName("");
-      setEditedTaskPriority(3); // Reset
+      setEditedTaskPriority(3);
     }
   };
 
   const handleCancelEdit = () => {
     setEditingTaskId(null);
     setEditedTaskName("");
-    setEditedTaskPriority(3); // Reset
+    setEditedTaskPriority(3);
   };
 
   const handleAddSubTaskClick = (parentId: string) => {
@@ -88,21 +88,21 @@ const TaskList: React.FC<TaskListProps> = ({
       if (!a.completed && b.completed) return -1;
 
       if (a.completed && b.completed) {
-        return new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime();
+        return new Date(b.completed_at!).getTime() - new Date(a.completed_at!).getTime(); // Use completed_at
       }
 
       if (!a.completed && !b.completed) {
         if (b.priority !== a.priority) {
           return b.priority - a.priority;
         }
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime(); // Use created_at
       }
       return 0;
     });
   };
 
   const renderTaskItem = (task: Task, level: number = 0) => {
-    const subTasks = sortTasks(tasks.filter(t => t.parentId === task.id));
+    const subTasks = sortTasks(tasks.filter(t => t.parent_id === task.id)); // Use parent_id
     const isExpanded = expandedTasks.has(task.id);
     const hasSubTasks = subTasks.length > 0;
 
@@ -198,9 +198,9 @@ const TaskList: React.FC<TaskListProps> = ({
               )}
             </div>
           </div>
-          {task.completed && task.completedAt && (
+          {task.completed && task.completed_at && ( // Use completed_at
             <span className="text-sm text-muted-foreground mt-1 self-end">
-              Completed: {format(new Date(task.completedAt), "MMM dd, yyyy HH:mm")}
+              Completed: {format(new Date(task.completed_at), "MMM dd, yyyy HH:mm")}
             </span>
           )}
         </div>
@@ -213,7 +213,7 @@ const TaskList: React.FC<TaskListProps> = ({
     );
   };
 
-  const topLevelTasks = sortTasks(tasks.filter(task => !task.parentId));
+  const topLevelTasks = sortTasks(tasks.filter(task => !task.parent_id)); // Use parent_id
 
   return (
     <div className="flex flex-col h-full">
