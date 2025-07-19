@@ -6,8 +6,9 @@ import { Area, Task } from "@/types";
 import { loadState, saveState } from "@/lib/storage";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import Layout from "@/components/Layout"; // Import Layout
 
-const TasksPage = () => { // Renamed from Index
+const TasksPage = () => {
   const [areas, setAreas] = React.useState<Area[]>([]);
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [selectedAreaId, setSelectedAreaId] = React.useState<string | null>(null);
@@ -92,7 +93,16 @@ const TasksPage = () => { // Renamed from Index
     : [];
 
   return (
-    <div className="flex flex-col h-full">
+    <Layout
+      sidebar={
+        <AreaList
+          areas={areas}
+          selectedAreaId={selectedAreaId}
+          onSelectArea={setSelectedAreaId}
+          onAddArea={handleAddArea}
+        />
+      }
+    >
       {selectedAreaId ? (
         <TaskList
           tasks={filteredTasks}
@@ -106,7 +116,7 @@ const TasksPage = () => { // Renamed from Index
         </div>
       )}
       <MadeWithDyad />
-    </div>
+    </Layout>
   );
 };
 
