@@ -45,29 +45,33 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
                   : "transparent",
               )
             }
-          >
-            {item.title}
-          </NavLink>
-          {item.subItems && isActive => isActive && (
-            <div className="ml-4 mt-1 space-y-1">
-              {item.subItems.map((subItem) => (
-                <NavLink
-                  key={subItem.href}
-                  to={subItem.href}
-                  className={({ isActive: isSubActive }) =>
-                    cn(
-                      "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-9 px-4 py-2 justify-start",
-                      isSubActive
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "transparent",
-                    )
-                  }
-                >
-                  {subItem.title}
-                </NavLink>
-              ))}
-            </div>
-          )}
+            // Use a render prop for children to get isActive state of the parent NavLink
+            children={({ isActive: parentIsActive }) => (
+              <>
+                {item.title}
+                {item.subItems && parentIsActive && ( // Conditionally render sub-items if parent is active
+                  <div className="ml-4 mt-1 space-y-1">
+                    {item.subItems.map((subItem) => (
+                      <NavLink
+                        key={subItem.href}
+                        to={subItem.href}
+                        className={({ isActive: isSubActive }) =>
+                          cn(
+                            "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-9 px-4 py-2 justify-start",
+                            isSubActive
+                              ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                              : "transparent",
+                          )
+                        }
+                      >
+                        {subItem.title}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          />
         </div>
       ))}
     </nav>
