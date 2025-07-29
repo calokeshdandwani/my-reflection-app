@@ -1,14 +1,13 @@
 import React from "react";
-import { loadHourlyResponses, loadTasks } from "@/lib/storage"; // Updated imports
+import { loadHourlyResponses } from "@/lib/storage"; // Updated imports
 import { format } from "date-fns";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Task, HourlyResponse } from "@/types"; // Import Task and HourlyResponse interfaces
+import { HourlyResponse } from "@/types"; // Import Task and HourlyResponse interfaces
 
 const HistoryPage: React.FC = () => {
   const [responses, setResponses] = React.useState<HourlyResponse[]>([]);
-  const [tasks, setTasks] = React.useState<Task[]>([]);
 
   React.useEffect(() => {
     const fetchHistoryData = async () => {
@@ -16,10 +15,6 @@ const HistoryPage: React.FC = () => {
       if (storedResponses) {
         // Responses are already sorted by timestamp descending from loadHourlyResponses
         setResponses(storedResponses);
-      }
-      const storedTasks = await loadTasks();
-      if (storedTasks) {
-        setTasks(storedTasks);
       }
     };
     fetchHistoryData();
@@ -60,27 +55,12 @@ const HistoryPage: React.FC = () => {
     exportToCsv(dataToExport, "hourly_reflections.csv", ["Timestamp", "Response"]);
   };
 
-  const handleExportTasks = () => {
-    const dataToExport = tasks.map(t => ({
-      ID: t.id,
-      AreaID: t.area_id, // Use area_id as per Supabase schema
-      Name: t.name,
-      Priority: t.priority,
-      Completed: t.completed ? 'Yes' : 'No',
-      CompletedAt: t.completed_at ? format(new Date(t.completed_at), "yyyy-MM-dd HH:mm:ss") : '', // Use completed_at
-      CreatedAt: format(new Date(t.created_at), "yyyy-MM-dd HH:mm:ss"), // Use created_at
-      ParentID: t.parent_id || '', // Use parent_id
-    }));
-    exportToCsv(dataToExport, "all_tasks.csv", ["ID", "AreaID", "Name", "Priority", "Completed", "CompletedAt", "CreatedAt", "ParentID"]);
-  };
-
   return (
     <div className="flex flex-col h-full max-w-2xl mx-auto p-6 bg-card rounded-lg shadow-lg">
       <h1 className="text-3xl font-bold text-center mb-8 text-primary">Your Reflection History</h1>
 
       <div className="flex justify-center gap-4 mb-6">
         <Button onClick={handleExportResponses}>Export Reflections (CSV)</Button>
-        <Button onClick={handleExportTasks}>Export Tasks (CSV)</Button>
       </div>
 
       <ScrollArea className="flex-1 mb-6 p-4 border rounded-md bg-background">
