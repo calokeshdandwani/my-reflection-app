@@ -1,6 +1,6 @@
 import React from "react";
-import { Task } from "@/types";
-import { loadTasks } from "@/lib/storage";
+import { Task, Area } from "@/types";
+import { loadTasks, updateTask, loadAreas } from "@/lib/storage";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -10,19 +10,45 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 
 const RecentPage: React.FC = () => {
   const [pendingTasks, setPendingTasks] = React.useState<Task[]>([]);
+  const [areas, setAreas] = React.useState<Area[]>([]);
 
   React.useEffect(() => {
-    const fetchTasks = async () => {
+    const fetchData = async () => {
       const allTasks = await loadTasks();
-      if (allTasks) {
+      const allAreas = await loadAreas();
+      if (allTasks && allAreas) {
         const pending = allTasks
           .filter(task => !task.completed)
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         setPendingTasks(pending);
+        setAreas(allAreas);
       }
     };
-    fetchTasks();
+    fetchData();
   }, []);
+
+  const handleToggleTaskCompletion = async (taskId: string) => {
+    const taskToToggle = pendingTasks.find(task => task.id === taskId);
+    if (!taskToToggle) return;
+
+    const newCompletedStatus = !taskToToggle.completed;
+    const updatedTask = await updateTask(taskId, {
+      completed: newCompletedStatus,
+      completed_at: newCompletedStatus ? new Date().toISOString() : null,
+    });
+
+    if (updatedTask) {
+      // Remove the task from the pending list
+      setPendingTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    }
+  };
+
+  const areaNameMap = React.useMemo(() => {
+    return areas.reduce((acc, area) => {
+      acc[area.id] = area.name;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [areas]);
 
   const renderTaskItem = (task: Task) => {
     return (
@@ -35,7 +61,7 @@ const RecentPage: React.FC = () => {
             <Checkbox
               id={`task-${task.id}`}
               checked={task.completed}
-              disabled // Read-only
+              onCheckedChange={() => handleToggleTaskCompletion(task.id)}
             />
             <label
               htmlFor={`task-${task.id}`}
@@ -55,6 +81,7 @@ const RecentPage: React.FC = () => {
               ))}
             </div>
           </div>
+          <span className="text-sm text-muted-foreground">{areaNameMap[task.area_id]}</span>
         </div>
         <span className="text-sm text-muted-foreground mt-1 self-end">
           Created: {format(new Date(task.created_at), "MMM dd, yyyy HH:mm")}
