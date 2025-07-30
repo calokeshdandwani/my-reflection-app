@@ -147,7 +147,7 @@ const TargetsPage = () => {
 
   return (
     <div className="flex h-full">
-      <aside className="w-64 border-r bg-sidebar text-sidebar-foreground p-4 flex flex-col">
+      <aside className="w-80 border-r bg-sidebar text-sidebar-foreground p-4 flex flex-col">
         <AreaList
           areas={areas}
           selectedAreaId={selectedAreaId}
