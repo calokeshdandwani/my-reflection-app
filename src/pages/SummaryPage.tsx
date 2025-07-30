@@ -1,7 +1,7 @@
 import React from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { loadHourlyResponses, loadTasks } from "@/lib/storage"; // Updated imports
-import { format, isSameDay, isWithinInterval } from "date-fns";
+import { format, isSameDay, isWithinInterval, endOfDay } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -106,15 +106,17 @@ const SummaryPage: React.FC = () => {
 
   const filteredResponses = React.useMemo(() => {
     if (!date?.from || !date?.to) return [];
+    const interval = { start: date.from, end: endOfDay(date.to) };
     return hourlyResponses.filter(response =>
-      isWithinInterval(new Date(response.timestamp), { start: date.from!, end: date.to! })
+      isWithinInterval(new Date(response.timestamp), interval)
     ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()); // Sort by time
   }, [hourlyResponses, date]);
 
   const filteredCompletedTasks = React.useMemo(() => {
     if (!date?.from || !date?.to) return [];
+    const interval = { start: date.from, end: endOfDay(date.to) };
     return completedTasks.filter(task =>
-      task.completed && task.completed_at && isWithinInterval(new Date(task.completed_at), { start: date.from!, end: date.to! }) // Use task.completed_at
+      task.completed && task.completed_at && isWithinInterval(new Date(task.completed_at), interval) // Use task.completed_at
     ).sort((a, b) => new Date(a.completed_at!).getTime() - new Date(b.completed_at!).getTime()); // Sort by completion time
   }, [completedTasks, date]);
 
