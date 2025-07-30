@@ -33,13 +33,11 @@ const LayoutComponent: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      {!isMobile && (
-        <aside className="w-80 border-r bg-sidebar text-sidebar-foreground p-4 flex-col hidden md:flex">
-          <h2 className="text-lg font-semibold mb-4">Navigation</h2>
-          <SidebarNav />
-          {isTargetsPage && <TargetsSidebar />}
-        </aside>
-      )}
+      <aside className="w-80 border-r bg-sidebar text-sidebar-foreground p-4 flex-col hidden md:flex">
+        <h2 className="text-lg font-semibold mb-4">Navigation</h2>
+        <SidebarNav />
+        {isTargetsPage && <TargetsSidebar />}
+      </aside>
       <div className="flex flex-col flex-1">
         {isMobile && (
           <header className="flex items-center p-4 border-b md:hidden">
