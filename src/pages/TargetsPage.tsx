@@ -3,7 +3,7 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import AreaList from "./targets/AreaList";
 import TaskList from "./targets/TaskList";
 import { Area, Task } from "@/types";
-import { loadAreas, saveArea, loadTasks, saveTask, updateTask, deleteTask } from "@/lib/storage"; // Updated imports
+import { loadAreas, saveArea, loadTasks, saveTask, updateTask, deleteTask, updateArea, deleteArea } from "@/lib/storage"; // Updated imports
 import { toast } from "sonner";
 
 const TargetsPage = () => {
@@ -114,6 +114,33 @@ const TargetsPage = () => {
     }
   };
 
+  const handleEditArea = async (areaId: string, newName: string) => {
+    const updatedArea = await updateArea(areaId, { name: newName });
+    if (updatedArea) {
+      setAreas((prevAreas) =>
+        prevAreas.map((area) =>
+          area.id === areaId ? updatedArea : area,
+        ),
+      );
+      toast.success("Area updated!");
+    } else {
+      toast.error("Failed to update area.");
+    }
+  };
+
+  const handleDeleteArea = async (areaId: string) => {
+    const success = await deleteArea(areaId);
+    if (success) {
+      setAreas((prevAreas) => prevAreas.filter((area) => area.id !== areaId));
+      if (selectedAreaId === areaId) {
+        setSelectedAreaId(areas.length > 1 ? areas[0].id : null);
+      }
+      toast.success("Area deleted!");
+    } else {
+      toast.error("Failed to delete area.");
+    }
+  };
+
   const filteredTasks = selectedAreaId
     ? tasks.filter((task) => task.area_id === selectedAreaId) // Use area_id
     : [];
@@ -126,6 +153,8 @@ const TargetsPage = () => {
           selectedAreaId={selectedAreaId}
           onSelectArea={setSelectedAreaId}
           onAddArea={handleAddArea}
+          onEditArea={handleEditArea}
+          onDeleteArea={handleDeleteArea}
         />
       </aside>
       <main className="flex-1 p-6">

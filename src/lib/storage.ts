@@ -114,6 +114,14 @@ export const saveArea = async (area: Omit<Area, "id" | "created_at">): Promise<A
   return saveSupabaseData<Area>("areas", newArea);
 };
 
+export const updateArea = async (areaId: string, updates: Partial<Area>): Promise<Area | undefined> => {
+  return updateSupabaseData<Area>("areas", areaId, updates);
+};
+
+export const deleteArea = async (areaId: string): Promise<boolean> => {
+  return deleteSupabaseData("areas", areaId);
+};
+
 export const loadTasks = async (): Promise<Task[] | undefined> => {
   return loadSupabaseData<Task>("tasks", "created_at", true);
 };
