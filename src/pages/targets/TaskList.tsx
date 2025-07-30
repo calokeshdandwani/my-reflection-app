@@ -30,55 +30,6 @@ const TaskList: React.FC<TaskListProps> = ({
   const [addingSubTaskFor, setAddingSubTaskFor] = React.useState<string | null>(null);
   const [expandedTasks, setExpandedTasks] = React.useState<Set<string>>(new Set());
 
-  const exportToCsv = (data: any[], filename: string, headers: string[]) => {
-    const csvRows = [];
-    csvRows.push(headers.join(',')); // Add headers
-
-    for (const row of data) {
-      const values = headers.map(header => {
-        let value = row[header.replace(/\s/g, '')]; // Remove spaces from header to match key
-        if (value === undefined || value === null) {
-          value = '';
-        } else if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
-          value = `"${value.replace(/"/g, '""')}"`; // Escape double quotes and wrap in quotes
-        }
-        return value;
-      });
-      csvRows.push(values.join(','));
-    }
-
-    const csvString = csvRows.join('\n');
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleExportCompletedTasks = () => {
-    const completedTasks = tasks.filter(task => task.completed);
-    if (completedTasks.length === 0) {
-      // Using window.alert for simplicity, a more integrated solution like a toast notification would be better
-      alert("No completed tasks to export.");
-      return;
-    }
-
-    const dataToExport = completedTasks.map(t => ({
-      ID: t.id,
-      AreaID: t.area_id,
-      Name: t.name,
-      Priority: t.priority,
-      Completed: t.completed ? 'Yes' : 'No',
-      CompletedAt: t.completed_at ? format(new Date(t.completed_at), "yyyy-MM-dd HH:mm:ss") : '',
-      CreatedAt: format(new Date(t.created_at), "yyyy-MM-dd HH:mm:ss"),
-      ParentID: t.parent_id || '',
-    }));
-
-    exportToCsv(dataToExport, "completed_tasks.csv", ["ID", "AreaID", "Name", "Priority", "Completed", "CompletedAt", "CreatedAt", "ParentID"]);
-  };
-
   const handleAddTask = (parentId?: string) => {
     if (newTaskName.trim()) {
       onAddTask(newTaskName.trim(), newTaskPriority, parentId);
@@ -295,9 +246,6 @@ const TaskList: React.FC<TaskListProps> = ({
             <X className="h-4 w-4" />
           </Button>
         )}
-      </div>
-      <div className="flex justify-end mb-4">
-        <Button onClick={handleExportCompletedTasks}>Export Completed (CSV)</Button>
       </div>
 
       <div className="space-y-4">

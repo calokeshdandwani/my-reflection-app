@@ -15,61 +15,6 @@ const SummaryPage: React.FC = () => {
   const [hourlyResponses, setHourlyResponses] = React.useState<HourlyResponse[]>([]);
   const [completedTasks, setCompletedTasks] = React.useState<Task[]>([]);
 
-  const exportToCsv = (data: any[], filename: string, headers: string[]) => {
-    const csvRows = [];
-    csvRows.push(headers.join(',')); // Add headers
-
-    for (const row of data) {
-      const values = headers.map(header => {
-        let value = row[header.replace(/\s/g, '')]; // Remove spaces from header to match key
-        if (value === undefined || value === null) {
-          value = '';
-        } else if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
-          value = `"${value.replace(/"/g, '""')}"`; // Escape double quotes and wrap in quotes
-        }
-        return value;
-      });
-      csvRows.push(values.join(','));
-    }
-
-    const csvString = csvRows.join('\n');
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleExportSummary = () => {
-    if (!selectedDate) {
-      alert("Please select a date to export the summary.");
-      return;
-    }
-
-    const dataToExport = [
-      ...filteredResponses.map(r => ({
-        Time: format(new Date(r.timestamp), "HH:mm"),
-        Type: "Reflection",
-        Content: r.response,
-      })),
-      ...filteredCompletedTasks.map(t => ({
-        Time: t.completed_at ? format(new Date(t.completed_at), "HH:mm") : "N/A",
-        Type: "Completed Task",
-        Content: t.name,
-      })),
-    ].sort((a, b) => a.Time.localeCompare(b.Time));
-
-    if (dataToExport.length === 0) {
-      alert("No data to export for the selected date.");
-      return;
-    }
-
-    const filename = `summary_${format(selectedDate, "yyyy-MM-dd")}.csv`;
-    exportToCsv(dataToExport, filename, ["Time", "Type", "Content"]);
-  };
-
   React.useEffect(() => {
     const fetchSummaryData = async () => {
       const storedResponses = await loadHourlyResponses();
@@ -102,7 +47,7 @@ const SummaryPage: React.FC = () => {
     <div className="flex flex-col h-full max-w-2xl mx-auto p-6 bg-card rounded-lg shadow-lg">
       <h1 className="text-3xl font-bold text-center mb-8 text-primary">Daily Summary Report</h1>
 
-      <div className="mb-6 flex justify-center items-center gap-4">
+      <div className="mb-6 flex justify-center">
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -125,7 +70,6 @@ const SummaryPage: React.FC = () => {
             />
           </PopoverContent>
         </Popover>
-        <Button onClick={handleExportSummary}>Export to CSV</Button>
       </div>
 
       <div className="flex-1 overflow-hidden">
