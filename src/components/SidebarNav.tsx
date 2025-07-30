@@ -1,9 +1,19 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Home, ListTodo, History, FileText, Clock } from "lucide-react"; // Added FileText icon for Summary
+import { Home, ListTodo, History, FileText, Clock } from "lucide-react";
 
-const SidebarNav: React.FC = () => {
+interface SidebarNavProps {
+  closeSidebar?: () => void;
+}
+
+const SidebarNav: React.FC<SidebarNavProps> = ({ closeSidebar }) => {
+  const handleLinkClick = () => {
+    if (closeSidebar) {
+      closeSidebar();
+    }
+  };
+
   return (
     <nav className="space-y-1">
       <NavLink
@@ -14,6 +24,7 @@ const SidebarNav: React.FC = () => {
             isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
           )
         }
+        onClick={handleLinkClick}
       >
         <Home className="h-4 w-4" />
         Home
@@ -26,6 +37,7 @@ const SidebarNav: React.FC = () => {
             isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
           )
         }
+        onClick={handleLinkClick}
       >
         <ListTodo className="h-4 w-4" />
         Targets
@@ -38,6 +50,7 @@ const SidebarNav: React.FC = () => {
             isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
           )
         }
+        onClick={handleLinkClick}
       >
         <Clock className="h-4 w-4" />
         Recent
@@ -50,6 +63,7 @@ const SidebarNav: React.FC = () => {
             isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
           )
         }
+        onClick={handleLinkClick}
       >
         <History className="h-4 w-4" />
         History
@@ -62,6 +76,7 @@ const SidebarNav: React.FC = () => {
             isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
           )
         }
+        onClick={handleLinkClick}
       >
         <FileText className="h-4 w-4" />
         Summary

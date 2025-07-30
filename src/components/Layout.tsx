@@ -42,9 +42,9 @@ const LayoutComponent: React.FC<{ children: React.ReactNode }> = ({ children }) 
       )}
       <div className="flex flex-col flex-1">
         {isMobile && (
-          <header className="flex items-center justify-between p-4 border-b md:hidden">
-            <h2 className="text-lg font-semibold">Menu</h2>
+          <header className="flex items-center p-4 border-b md:hidden">
             <MobileSidebar />
+            <h2 className="text-lg font-semibold ml-4">Menu</h2>
           </header>
         )}
         <main className="flex-1 p-6">{children}</main>
