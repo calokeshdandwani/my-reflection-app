@@ -6,8 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import HistoryPage from "./pages/HistoryPage";
 import TargetsPage from "./pages/TargetsPage";
-import RecentPage from "./pages/RecentPage";
-import DayPlannerPage from "./pages/DayPlannerPage";
 import SummaryPage from "./pages/SummaryPage";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
@@ -47,7 +45,6 @@ const App = () => {
             <Route path="/history" element={<Layout><HistoryPage /></Layout>} />
             <Route path="/history/summary" element={<Layout><SummaryPage /></Layout>} />
             <Route path="/targets" element={<Layout><TargetsPage /></Layout>} />
-            <Route path="/recent" element={<Layout><RecentPage /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -36,14 +36,15 @@ export const saveSupabaseData = async <T>(
     const { data: savedData, error } = await supabase
       .from(tableName)
       .insert(data)
-      .select();
+      .select()
+      .single();
 
     if (error) {
       console.error(`Error saving data to ${tableName}:`, error);
       toast.error(`Failed to save to ${tableName}: ${error.message}`); // Show Supabase error
       return undefined;
     }
-    return savedData?.[0] as T;
+    return savedData as T;
   } catch (error: any) { // Catch unexpected errors
     console.error(`Unexpected error saving data to ${tableName}:`, error);
     toast.error(`An unexpected error occurred while saving to ${tableName}: ${error.message}`);
@@ -113,23 +114,15 @@ export const saveArea = async (area: Omit<Area, "id" | "created_at">): Promise<A
   return saveSupabaseData<Area>("areas", newArea);
 };
 
-export const updateArea = async (areaId: string, updates: Partial<Area>): Promise<Area | undefined> => {
-  return updateSupabaseData<Area>("areas", areaId, updates);
-};
-
-export const deleteArea = async (areaId: string): Promise<boolean> => {
-  return deleteSupabaseData("areas", areaId);
-};
-
 export const loadTasks = async (): Promise<Task[] | undefined> => {
   return loadSupabaseData<Task>("tasks", "created_at", true);
 };
 
-export const saveTask = async (task: Omit<Task, "id" | "created_at">): Promise<Task | undefined> => {
+export const saveTask = async (task: Omit<Task, "id" | "created_at" | "completed" | "completed_at">): Promise<Task | undefined> => {
   const newTask: Task = {
     id: crypto.randomUUID(),
     created_at: new Date().toISOString(),
-    completed: task.completed || false,
+    completed: false,
     ...task,
   };
   return saveSupabaseData<Task>("tasks", newTask);
