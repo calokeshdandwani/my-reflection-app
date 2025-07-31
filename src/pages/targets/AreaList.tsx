@@ -25,6 +25,7 @@ interface AreaListProps {
   onEditArea: (areaId: string, newName: string) => void;
   onDeleteArea: (areaId: string) => void;
   pendingTaskCounts: Record<string, number>;
+  totalPendingTasks: number;
 }
 
 const AreaList: React.FC<AreaListProps> = ({
@@ -35,6 +36,7 @@ const AreaList: React.FC<AreaListProps> = ({
   onEditArea,
   onDeleteArea,
   pendingTaskCounts,
+  totalPendingTasks,
 }) => {
   const [newAreaName, setNewAreaName] = React.useState("");
   const [editingAreaId, setEditingAreaId] = React.useState<string | null>(null);
@@ -67,7 +69,7 @@ const AreaList: React.FC<AreaListProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-lg font-semibold mb-4">Areas</h2>
+      <h2 className="text-lg font-semibold mb-4">Areas ({totalPendingTasks})</h2>
       <div className="flex gap-2 mb-4">
         <Input
           placeholder="New Area Name"
