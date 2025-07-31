@@ -57,11 +57,13 @@ const TargetsPage = () => {
     const originalTask = tasks.find(task => task.id === taskId);
     if (!originalTask) return;
 
-    const newFollowUpTask: Omit<Task, "id" | "created_at"> = {
-      ...originalTask,
+    const newFollowUpTask: Omit<Task, "id" | "created_at" | "completed" | "completed_at"> & { completed: boolean; completed_at: string | null } = {
+      area_id: originalTask.area_id,
+      name: `${originalTask.name} (Follow-up)`,
+      priority: originalTask.priority,
+      parent_id: originalTask.parent_id,
       completed: true,
       completed_at: new Date().toISOString(),
-      name: `${originalTask.name} (Follow-up)`,
     };
 
     const savedTask = await saveTask(newFollowUpTask);

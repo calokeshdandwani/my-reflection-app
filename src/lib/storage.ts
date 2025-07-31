@@ -126,11 +126,11 @@ export const loadTasks = async (): Promise<Task[] | undefined> => {
   return loadSupabaseData<Task>("tasks", "created_at", true);
 };
 
-export const saveTask = async (task: Omit<Task, "id" | "created_at" | "completed" | "completed_at">): Promise<Task | undefined> => {
+export const saveTask = async (task: Omit<Task, "id" | "created_at">): Promise<Task | undefined> => {
   const newTask: Task = {
     id: crypto.randomUUID(),
     created_at: new Date().toISOString(),
-    completed: false,
+    completed: task.completed || false,
     ...task,
   };
   return saveSupabaseData<Task>("tasks", newTask);
