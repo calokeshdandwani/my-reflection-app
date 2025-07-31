@@ -22,8 +22,6 @@ const SummaryPage: React.FC = () => {
     from: new Date(),
     to: new Date(),
   });
-  const [hourlyResponses, setHourlyResponses] = React.useState<HourlyResponse[]>([]);
-  const [completedTasks, setCompletedTasks] = React.useState<Task[]>([]);
   const [filteredResponses, setFilteredResponses] = React.useState<HourlyResponse[]>([]);
   const [filteredCompletedTasks, setFilteredCompletedTasks] = React.useState<Task[]>([]);
 
@@ -95,27 +93,23 @@ const SummaryPage: React.FC = () => {
   React.useEffect(() => {
     const fetchAndFilterData = async () => {
       const storedResponses = await loadHourlyResponses() || [];
-      setHourlyResponses(storedResponses);
       const storedTasks = await loadTasks() || [];
-      setCompletedTasks(storedTasks);
+
+      if (date?.from && date?.to) {
+        const interval = { start: date.from, end: endOfDay(date.to) };
+        const filteredResp = storedResponses.filter(response =>
+          isWithinInterval(new Date(response.timestamp), interval)
+        ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        setFilteredResponses(filteredResp);
+
+        const filteredTasks = storedTasks.filter(task =>
+          task.completed && task.completed_at && isWithinInterval(new Date(task.completed_at), interval)
+        ).sort((a, b) => new Date(a.completed_at!).getTime() - new Date(b.completed_at!).getTime());
+        setFilteredCompletedTasks(filteredTasks);
+      }
     };
     fetchAndFilterData();
-  }, []);
-
-  React.useEffect(() => {
-    if (date?.from && date?.to) {
-      const interval = { start: date.from, end: endOfDay(date.to) };
-      const filteredResp = hourlyResponses.filter(response =>
-        isWithinInterval(new Date(response.timestamp), interval)
-      ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-      setFilteredResponses(filteredResp);
-
-      const filteredTasks = completedTasks.filter(task =>
-        task.completed && task.completed_at && isWithinInterval(new Date(task.completed_at), interval)
-      ).sort((a, b) => new Date(a.completed_at!).getTime() - new Date(b.completed_at!).getTime());
-      setFilteredCompletedTasks(filteredTasks);
-    }
-  }, [date, hourlyResponses, completedTasks]);
+  }, [date]);
 
   return (
     <div className="flex flex-col h-full max-w-2xl mx-auto p-6 bg-card rounded-lg shadow-lg">
