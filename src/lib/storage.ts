@@ -145,18 +145,7 @@ export const deleteTask = async (taskId: string): Promise<boolean> => {
 };
 
 export const addTaskToDayPlanner = async (taskId: string, date: Date): Promise<any | undefined> => {
-  const { data, error } = await supabase
-    .from("day_planner_tasks")
-    .insert([{ task_id: taskId, date: date.toISOString().split('T')[0] }])
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error adding task to day planner:", error);
-    toast.error(`Failed to add task to day planner: ${error.message}`);
-    return undefined;
-  }
-  return data;
+  return saveSupabaseData("day_planner_tasks", { task_id: taskId, date: date.toISOString().split('T')[0] });
 };
 
 export const loadDayPlannerTasks = async (date: Date): Promise<any[] | undefined> => {

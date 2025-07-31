@@ -58,6 +58,12 @@ const DayPlannerPage: React.FC = () => {
 
   const handleAddTaskToDayPlanner = async (taskId: string) => {
     if (selectedDate) {
+      const isAlreadyAdded = dayPlannerTasks.some(plannedTask => plannedTask.task_id === taskId);
+      if (isAlreadyAdded) {
+        toast.info("This task is already in your day planner for this date.");
+        return;
+      }
+
       const addedTask = await addTaskToDayPlanner(taskId, selectedDate);
       if (addedTask) {
         toast.success("Task added to day planner!");
