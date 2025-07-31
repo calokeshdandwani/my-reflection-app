@@ -24,6 +24,7 @@ interface AreaListProps {
   onAddArea: (name: string) => void;
   onEditArea: (areaId: string, newName: string) => void;
   onDeleteArea: (areaId: string) => void;
+  pendingTaskCounts: Record<string, number>;
 }
 
 const AreaList: React.FC<AreaListProps> = ({
@@ -33,6 +34,7 @@ const AreaList: React.FC<AreaListProps> = ({
   onAddArea,
   onEditArea,
   onDeleteArea,
+  pendingTaskCounts,
 }) => {
   const [newAreaName, setNewAreaName] = React.useState("");
   const [editingAreaId, setEditingAreaId] = React.useState<string | null>(null);
@@ -107,7 +109,7 @@ const AreaList: React.FC<AreaListProps> = ({
                     )}
                     onClick={() => onSelectArea(area.id)}
                   >
-                    {area.name}
+                    {area.name} ({pendingTaskCounts[area.id] || 0})
                   </Button>
                   <div className="flex items-center">
                     <Button onClick={() => handleEditClick(area)} size="icon" variant="ghost">

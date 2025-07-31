@@ -150,6 +150,14 @@ const TargetsPage = () => {
     ? tasks.filter((task) => task.area_id === selectedAreaId) // Use area_id
     : [];
 
+  const pendingTaskCounts = React.useMemo(() => {
+    return areas.reduce((acc, area) => {
+      const count = tasks.filter(task => task.area_id === area.id && !task.completed).length;
+      acc[area.id] = count;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [areas, tasks]);
+
   const handleAreaSelect = (areaId: string) => {
     setSelectedAreaId(areaId);
     setShowAreaList(false);
@@ -189,6 +197,7 @@ const TargetsPage = () => {
               onAddArea={handleAddArea}
               onEditArea={handleEditArea}
               onDeleteArea={handleDeleteArea}
+              pendingTaskCounts={pendingTaskCounts}
             />
           </SheetContent>
           <MadeWithDyad />
@@ -207,6 +216,7 @@ const TargetsPage = () => {
           onAddArea={handleAddArea}
           onEditArea={handleEditArea}
           onDeleteArea={handleDeleteArea}
+          pendingTaskCounts={pendingTaskCounts}
         />
       </aside>
       <main className="flex-1 p-6">
