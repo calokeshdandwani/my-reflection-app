@@ -36,15 +36,14 @@ export const saveSupabaseData = async <T>(
     const { data: savedData, error } = await supabase
       .from(tableName)
       .insert(data)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error(`Error saving data to ${tableName}:`, error);
       toast.error(`Failed to save to ${tableName}: ${error.message}`); // Show Supabase error
       return undefined;
     }
-    return savedData as T;
+    return savedData?.[0] as T;
   } catch (error: any) { // Catch unexpected errors
     console.error(`Unexpected error saving data to ${tableName}:`, error);
     toast.error(`An unexpected error occurred while saving to ${tableName}: ${error.message}`);
@@ -145,7 +144,9 @@ export const deleteTask = async (taskId: string): Promise<boolean> => {
 };
 
 export const addTaskToDayPlanner = async (taskId: string, date: Date): Promise<any | undefined> => {
-  return saveSupabaseData("day_planner_tasks", { task_id: taskId, date: date.toISOString().split('T')[0] });
+  const dataToSave = { task_id: taskId, date: date.toISOString().split('T')[0] };
+  console.log("Saving to day_planner_tasks:", dataToSave);
+  return saveSupabaseData("day_planner_tasks", dataToSave);
 };
 
 export const loadDayPlannerTasks = async (date: Date): Promise<any[] | undefined> => {
