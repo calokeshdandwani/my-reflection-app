@@ -53,6 +53,26 @@ const TargetsPage = () => {
     }
   };
 
+  const handleFollowUp = async (taskId: string) => {
+    const originalTask = tasks.find(task => task.id === taskId);
+    if (!originalTask) return;
+
+    const newFollowUpTask: Omit<Task, "id" | "created_at"> = {
+      ...originalTask,
+      completed: true,
+      completed_at: new Date().toISOString(),
+      name: `${originalTask.name} (Follow-up)`,
+    };
+
+    const savedTask = await saveTask(newFollowUpTask);
+    if (savedTask) {
+      setTasks((prevTasks) => [...prevTasks, savedTask]);
+      toast.success(`Follow-up task for "${originalTask.name}" created!`);
+    } else {
+      toast.error("Failed to create follow-up task.");
+    }
+  };
+
   const handleAddTask = async (name: string, priority: number, parentId?: string) => {
     if (!selectedAreaId) {
       toast.error("Please select an area first.");
@@ -185,6 +205,7 @@ const TargetsPage = () => {
                 onToggleTaskCompletion={handleToggleTaskCompletion}
                 onDeleteTask={handleDeleteTask}
                 onEditTask={handleEditTask}
+                onFollowUp={handleFollowUp}
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center">
@@ -233,6 +254,7 @@ const TargetsPage = () => {
             onToggleTaskCompletion={handleToggleTaskCompletion}
             onDeleteTask={handleDeleteTask}
             onEditTask={handleEditTask}
+            onFollowUp={handleFollowUp}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">

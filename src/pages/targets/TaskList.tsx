@@ -3,7 +3,7 @@ import { Task } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Star, Pencil, Trash, Check, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Star, Pencil, Trash, Check, X, ChevronDown, ChevronRight, MessageSquarePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -13,6 +13,7 @@ interface TaskListProps {
   onToggleTaskCompletion: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onEditTask: (taskId: string, newName: string, newPriority: number) => void;
+  onFollowUp: (taskId: string) => void;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -21,6 +22,7 @@ const TaskList: React.FC<TaskListProps> = ({
   onToggleTaskCompletion,
   onDeleteTask,
   onEditTask,
+  onFollowUp,
 }) => {
   const [newTaskName, setNewTaskName] = React.useState("");
   const [newTaskPriority, setNewTaskPriority] = React.useState(3);
@@ -188,6 +190,9 @@ const TaskList: React.FC<TaskListProps> = ({
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => handleAddSubTaskClick(task.id)}>
                     <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => onFollowUp(task.id)}>
+                    <MessageSquarePlus className="h-4 w-4" />
                   </Button>
                   {hasSubTasks && (
                     <Button variant="ghost" size="icon" onClick={() => toggleExpand(task.id)}>
