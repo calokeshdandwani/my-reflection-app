@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { loadHourlyResponses, loadTasks } from "@/lib/storage"; // Updated imports
 import { format, isSameDay, isWithinInterval, endOfDay } from "date-fns";
@@ -18,6 +19,7 @@ import { Task, HourlyResponse } from "@/types"; // Import Task and HourlyRespons
 import { DateRange } from "react-day-picker";
 
 const SummaryPage: React.FC = () => {
+  const location = useLocation();
   const [date, setDate] = React.useState<DateRange | undefined>({
     from: new Date(),
     to: new Date(),
@@ -109,7 +111,7 @@ const SummaryPage: React.FC = () => {
       }
     };
     fetchAndFilterData();
-  }, [date]);
+  }, [date, location]);
 
   return (
     <div className="flex flex-col h-full max-w-2xl mx-auto p-6 bg-card rounded-lg shadow-lg">
