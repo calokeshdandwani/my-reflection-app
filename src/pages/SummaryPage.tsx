@@ -24,6 +24,8 @@ const SummaryPage: React.FC = () => {
   });
   const [hourlyResponses, setHourlyResponses] = React.useState<HourlyResponse[]>([]);
   const [completedTasks, setCompletedTasks] = React.useState<Task[]>([]);
+  const [filteredResponses, setFilteredResponses] = React.useState<HourlyResponse[]>([]);
+  const [filteredCompletedTasks, setFilteredCompletedTasks] = React.useState<Task[]>([]);
 
   const exportToCsv = (data: any[], filename: string, headers: string[]) => {
     const csvRows = [];
@@ -91,34 +93,29 @@ const SummaryPage: React.FC = () => {
   };
 
   React.useEffect(() => {
-    const fetchSummaryData = async () => {
-      const storedResponses = await loadHourlyResponses();
-      if (storedResponses) {
-        setHourlyResponses(storedResponses);
-      }
-      const storedTasks = await loadTasks();
-      if (storedTasks) {
-        setCompletedTasks(storedTasks);
-      }
+    const fetchAndFilterData = async () => {
+      const storedResponses = await loadHourlyResponses() || [];
+      setHourlyResponses(storedResponses);
+      const storedTasks = await loadTasks() || [];
+      setCompletedTasks(storedTasks);
     };
-    fetchSummaryData();
+    fetchAndFilterData();
   }, []);
 
-  const filteredResponses = React.useMemo(() => {
-    if (!date?.from || !date?.to) return [];
-    const interval = { start: date.from, end: endOfDay(date.to) };
-    return hourlyResponses.filter(response =>
-      isWithinInterval(new Date(response.timestamp), interval)
-    ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()); // Sort by time
-  }, [hourlyResponses, date]);
+  React.useEffect(() => {
+    if (date?.from && date?.to) {
+      const interval = { start: date.from, end: endOfDay(date.to) };
+      const filteredResp = hourlyResponses.filter(response =>
+        isWithinInterval(new Date(response.timestamp), interval)
+      ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      setFilteredResponses(filteredResp);
 
-  const filteredCompletedTasks = React.useMemo(() => {
-    if (!date?.from || !date?.to) return [];
-    const interval = { start: date.from, end: endOfDay(date.to) };
-    return completedTasks.filter(task =>
-      task.completed && task.completed_at && isWithinInterval(new Date(task.completed_at), interval) // Use task.completed_at
-    ).sort((a, b) => new Date(a.completed_at!).getTime() - new Date(b.completed_at!).getTime()); // Sort by completion time
-  }, [completedTasks, date]);
+      const filteredTasks = completedTasks.filter(task =>
+        task.completed && task.completed_at && isWithinInterval(new Date(task.completed_at), interval)
+      ).sort((a, b) => new Date(a.completed_at!).getTime() - new Date(b.completed_at!).getTime());
+      setFilteredCompletedTasks(filteredTasks);
+    }
+  }, [date, hourlyResponses, completedTasks]);
 
   return (
     <div className="flex flex-col h-full max-w-2xl mx-auto p-6 bg-card rounded-lg shadow-lg">
