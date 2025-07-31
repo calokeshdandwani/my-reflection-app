@@ -3,7 +3,7 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import AreaList from "./targets/AreaList";
 import TaskList from "./targets/TaskList";
 import { Area, Task } from "@/types";
-import { loadAreas, saveArea, loadTasks, saveTask, updateTask, deleteTask, updateArea, deleteArea } from "@/lib/storage"; // Updated imports
+import { loadAreas, saveArea, loadTasks, saveTask, updateTask, deleteTask, updateArea, deleteArea, addTaskToDayPlanner } from "@/lib/storage"; // Updated imports
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -50,6 +50,18 @@ const TargetsPage = () => {
       toast.success(`Area "${name}" added!`);
     } else {
       toast.error("Failed to add area.");
+    }
+  };
+
+  const handleAddToDayPlanner = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const addedTask = await addTaskToDayPlanner(taskId, new Date());
+    if (addedTask) {
+      toast.success(`Task "${task.name}" added to your day planner!`);
+    } else {
+      toast.error("Failed to add task to day planner.");
     }
   };
 
@@ -208,6 +220,7 @@ const TargetsPage = () => {
                 onDeleteTask={handleDeleteTask}
                 onEditTask={handleEditTask}
                 onFollowUp={handleFollowUp}
+                onAddToDayPlanner={handleAddToDayPlanner}
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center">
@@ -257,6 +270,7 @@ const TargetsPage = () => {
             onDeleteTask={handleDeleteTask}
             onEditTask={handleEditTask}
             onFollowUp={handleFollowUp}
+            onAddToDayPlanner={handleAddToDayPlanner}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">

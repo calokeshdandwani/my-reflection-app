@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Home, ListTodo, History, FileText, Clock } from "lucide-react";
+import { Home, ListTodo, History, FileText, Clock, CalendarCheck } from "lucide-react";
 
 interface SidebarNavProps {
   closeSidebar?: () => void;
@@ -54,6 +54,19 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ closeSidebar }) => {
       >
         <Clock className="h-4 w-4" />
         Recent
+      </NavLink>
+      <NavLink
+        to="/day-planner"
+        className={({ isActive }) =>
+          cn(
+            "flex items-center gap-3 rounded-md px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+          )
+        }
+        onClick={handleLinkClick}
+      >
+        <CalendarCheck className="h-4 w-4" />
+        Day Planner
       </NavLink>
       <NavLink
         to="/history"

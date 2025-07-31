@@ -7,6 +7,7 @@ import HomePage from "./pages/HomePage";
 import HistoryPage from "./pages/HistoryPage";
 import TargetsPage from "./pages/TargetsPage";
 import RecentPage from "./pages/RecentPage";
+import DayPlannerPage from "./pages/DayPlannerPage";
 import SummaryPage from "./pages/SummaryPage";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
@@ -47,6 +48,7 @@ const App = () => {
             <Route path="/history/summary" element={<Layout><SummaryPage /></Layout>} />
             <Route path="/targets" element={<Layout><TargetsPage /></Layout>} />
             <Route path="/recent" element={<Layout><RecentPage /></Layout>} />
+            <Route path="/day-planner" element={<Layout><DayPlannerPage /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
