@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
-import RecentPage from "./pages/RecentPage";
+import DayPlannerPage from "./pages/DayPlannerPage";
 import HistoryPage from "./pages/HistoryPage";
 import TargetsPage from "./pages/TargetsPage";
 import SummaryPage from "./pages/SummaryPage";
@@ -43,7 +43,7 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout><HomePage /></Layout>} />
-            <Route path="/recent" element={<Layout><RecentPage /></Layout>} />
+            <Route path="/day-planner" element={<Layout><DayPlannerPage /></Layout>} />
             <Route path="/history" element={<Layout><HistoryPage /></Layout>} />
             <Route path="/history/summary" element={<Layout><SummaryPage /></Layout>} />
             <Route path="/targets" element={<Layout><TargetsPage /></Layout>} />

@@ -3,7 +3,7 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import AreaList from "./targets/AreaList";
 import TaskList from "./targets/TaskList";
 import { Area, Task } from "@/types";
-import { loadAreas, saveArea, updateArea, deleteArea, loadTasks, saveTask, updateTask, deleteTask } from "@/lib/storage"; // Updated imports
+import { loadAreas, saveArea, loadTasks, saveTask, updateTask, deleteTask } from "@/lib/storage"; // Updated imports
 import { toast } from "sonner";
 
 const TargetsPage = () => {
@@ -17,7 +17,7 @@ const TargetsPage = () => {
       const storedAreas = await loadAreas();
       if (storedAreas) {
         setAreas(storedAreas);
-        if (storedAreas.length > 0 && selectedAreaId === null) {
+        if (storedAreas.length > 0) {
           setSelectedAreaId(storedAreas[0].id);
         }
       }
@@ -45,34 +45,6 @@ const TargetsPage = () => {
       toast.success(`Area "${name}" added!`);
     } else {
       toast.error("Failed to add area.");
-    }
-  };
-
-  const handleEditArea = async (areaId: string, newName: string) => {
-    const updatedArea = await updateArea(areaId, { name: newName });
-    if (updatedArea) {
-      setAreas((prevAreas) =>
-        prevAreas.map((area) =>
-          area.id === areaId ? updatedArea : area
-        )
-      );
-      toast.success(`Area "${newName}" updated!`);
-    } else {
-      toast.error("Failed to update area.");
-    }
-  };
-
-  const handleDeleteArea = async (areaId: string) => {
-    const success = await deleteArea(areaId);
-    if (success) {
-      setAreas((prevAreas) => prevAreas.filter((area) => area.id !== areaId));
-      setTasks((prevTasks) => prevTasks.filter((task) => task.area_id !== areaId));
-      if (selectedAreaId === areaId) {
-        setSelectedAreaId(areas.length > 1 ? areas.filter(a => a.id !== areaId)[0].id : null);
-      }
-      toast.success("Area deleted!");
-    } else {
-      toast.error("Failed to delete area.");
     }
   };
 
@@ -142,20 +114,6 @@ const TargetsPage = () => {
     }
   };
 
-  const pendingTaskCounts = React.useMemo(() => {
-    return tasks.reduce((acc, task) => {
-      if (!task.completed) {
-        const key = task.area_id;
-        acc[key] = (acc[key] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>);
-  }, [tasks]);
-
-  const totalPendingTasks = React.useMemo(() => {
-    return tasks.filter(task => !task.completed).length;
-  }, [tasks]);
-
   const filteredTasks = selectedAreaId
     ? tasks.filter((task) => task.area_id === selectedAreaId) // Use area_id
     : [];
@@ -168,10 +126,6 @@ const TargetsPage = () => {
           selectedAreaId={selectedAreaId}
           onSelectArea={setSelectedAreaId}
           onAddArea={handleAddArea}
-          onEditArea={handleEditArea}
-          onDeleteArea={handleDeleteArea}
-          pendingTaskCounts={pendingTaskCounts}
-          totalPendingTasks={totalPendingTasks}
         />
       </aside>
       <main className="flex-1 p-6">

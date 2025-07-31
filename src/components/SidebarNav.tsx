@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Home, ListTodo, History, FileText, Clock } from "lucide-react"; // Added FileText and Clock icons
+import { Home, ListTodo, History, FileText, Calendar } from "lucide-react"; // Added FileText and Calendar icons
 
 const SidebarNav: React.FC = () => {
   return (
@@ -19,7 +19,7 @@ const SidebarNav: React.FC = () => {
         Home
       </NavLink>
       <NavLink
-        to="/recent"
+        to="/day-planner"
         className={({ isActive }) =>
           cn(
             "flex items-center gap-3 rounded-md px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -27,8 +27,8 @@ const SidebarNav: React.FC = () => {
           )
         }
       >
-        <Clock className="h-4 w-4" />
-        Recent
+        <Calendar className="h-4 w-4" />
+        Day Planner
       </NavLink>
       <NavLink
         to="/targets"
