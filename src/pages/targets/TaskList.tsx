@@ -14,7 +14,6 @@ interface TaskListProps {
   onDeleteTask: (taskId: string) => void;
   onEditTask: (taskId: string, newName: string, newPriority: number) => void;
   onFollowUp: (taskId: string) => void;
-  onAddToDayPlanner?: (taskId: string) => void;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -24,7 +23,6 @@ const TaskList: React.FC<TaskListProps> = ({
   onDeleteTask,
   onEditTask,
   onFollowUp,
-  onAddToDayPlanner,
 }) => {
   const [newTaskName, setNewTaskName] = React.useState("");
   const [newTaskPriority, setNewTaskPriority] = React.useState(3);
@@ -196,11 +194,6 @@ const TaskList: React.FC<TaskListProps> = ({
                   <Button variant="ghost" size="icon" onClick={() => onFollowUp(task.id)}>
                     <MessageSquarePlus className="h-4 w-4" />
                   </Button>
-                  {onAddToDayPlanner && (
-                    <Button variant="ghost" size="icon" onClick={() => onAddToDayPlanner(task.id)}>
-                      <CalendarPlus className="h-4 w-4" />
-                    </Button>
-                  )}
                   {hasSubTasks && (
                     <Button variant="ghost" size="icon" onClick={() => toggleExpand(task.id)}>
                       {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}

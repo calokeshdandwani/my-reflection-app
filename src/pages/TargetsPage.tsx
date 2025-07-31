@@ -53,18 +53,6 @@ const TargetsPage = () => {
     }
   };
 
-  const handleAddToDayPlanner = async (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    const addedTask = await addTaskToDayPlanner(taskId, new Date());
-    if (addedTask) {
-      toast.success(`Task "${task.name}" added to your day planner!`);
-    } else {
-      toast.error("Failed to add task to day planner.");
-    }
-  };
-
   const handleFollowUp = async (taskId: string) => {
     const originalTask = tasks.find(task => task.id === taskId);
     if (!originalTask) return;

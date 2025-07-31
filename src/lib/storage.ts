@@ -143,26 +143,6 @@ export const deleteTask = async (taskId: string): Promise<boolean> => {
   return deleteSupabaseData("tasks", taskId);
 };
 
-export const addTaskToDayPlanner = async (taskId: string, date: Date): Promise<any | undefined> => {
-  const dataToSave = { task_id: taskId, date: date.toISOString().split('T')[0] };
-  console.log("Saving to day_planner_tasks:", dataToSave);
-  return saveSupabaseData("day_planner_tasks", dataToSave);
-};
-
-export const loadDayPlannerTasks = async (date: Date): Promise<any[] | undefined> => {
-  const { data, error } = await supabase
-    .from("day_planner_tasks")
-    .select("*, tasks(*)")
-    .eq("date", date.toISOString().split('T')[0]);
-
-  if (error) {
-    console.error("Error loading day planner tasks:", error);
-    toast.error(`Failed to load day planner tasks: ${error.message}`);
-    return undefined;
-  }
-  return data;
-};
-
 export const loadHourlyResponses = async (): Promise<HourlyResponse[] | undefined> => {
   return loadSupabaseData<HourlyResponse>("hourly_responses", "timestamp", false); // Order by timestamp descending
 };
