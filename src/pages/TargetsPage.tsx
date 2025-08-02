@@ -119,7 +119,6 @@ const TargetsPage = () => {
       area_id: originalTask.area_id,
       name: `${originalTask.name} - follow up`,
       priority: originalTask.priority,
-      parent_id: originalTask.id,
     };
     const savedTask = await saveTask(newTask);
     if (savedTask) {
