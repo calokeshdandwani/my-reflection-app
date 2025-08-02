@@ -3,9 +3,12 @@ import { Task } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Star, Pencil, Trash, Check, X, ChevronDown, ChevronRight, CopyPlus } from "lucide-react";
+import { Plus, Star, Pencil, Trash, Check, X, ChevronDown, ChevronRight, CopyPlus, CalendarPlus, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 
 interface TaskListProps {
   tasks: Task[];
@@ -14,6 +17,8 @@ interface TaskListProps {
   onDeleteTask: (taskId: string) => void;
   onEditTask: (taskId: string, newName: string, newPriority: number) => void;
   onAddFollowUpTask: (task: Task) => void;
+  onScheduleTask: (taskId: string, date: Date) => void;
+  onDragEnd: (result: DropResult) => void;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -23,6 +28,8 @@ const TaskList: React.FC<TaskListProps> = ({
   onDeleteTask,
   onEditTask,
   onAddFollowUpTask,
+  onScheduleTask,
+  onDragEnd,
 }) => {
   const [newTaskName, setNewTaskName] = React.useState("");
   const [newTaskPriority, setNewTaskPriority] = React.useState(3);
@@ -103,122 +110,151 @@ const TaskList: React.FC<TaskListProps> = ({
     });
   };
 
-  const renderTaskItem = (task: Task, level: number = 0) => {
+  const renderTaskItem = (task: Task, level: number = 0, index: number) => {
     const subTasks = sortTasks(tasks.filter(t => t.parent_id === task.id)); // Use parent_id
     const isExpanded = expandedTasks.has(task.id);
     const hasSubTasks = subTasks.length > 0;
 
     return (
-      <React.Fragment key={task.id}>
-        <div
-          className={cn(
-            "flex flex-col p-3 border rounded-md bg-card text-card-foreground",
-            task.completed && "opacity-60",
-            level > 0 && `ml-${level * 6} border-l-2 border-gray-200 pl-3`,
-          )}
-        >
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3 flex-1">
-              <Checkbox
-                id={`task-${task.id}`}
-                checked={task.completed}
-                onCheckedChange={() => onToggleTaskCompletion(task.id)}
-              />
-              {editingTaskId === task.id ? (
-                <div className="flex items-center flex-1 gap-2">
-                  <Input
-                    value={editedTaskName}
-                    onChange={(e) => setEditedTaskName(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSaveEdit(task.id)}
-                    className="flex-1"
-                  />
-                  <div className="flex items-center">
+      <Draggable key={task.id} draggableId={task.id} index={index}>
+        {(provided) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            className={cn(
+              "flex flex-col p-3 border rounded-md bg-card text-card-foreground",
+              task.completed && "opacity-60",
+              level > 0 && `ml-${level * 6} border-l-2 border-gray-200 pl-3`,
+            )}
+          >
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3 flex-1">
+                <div {...provided.dragHandleProps}>
+                  <GripVertical className="h-5 w-5" />
+                </div>
+                <Checkbox
+                  id={`task-${task.id}`}
+                  checked={task.completed}
+                  onCheckedChange={() => onToggleTaskCompletion(task.id)}
+                />
+                {editingTaskId === task.id ? (
+                  <div className="flex items-center flex-1 gap-2">
+                    <Input
+                      value={editedTaskName}
+                      onChange={(e) => setEditedTaskName(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && handleSaveEdit(task.id)}
+                      className="flex-1"
+                    />
+                    <div className="flex items-center">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={cn(
+                            "h-5 w-5 cursor-pointer",
+                            star <= editedTaskPriority ? "text-yellow-400 fill-yellow-400" : "text-gray-300",
+                          )}
+                          onClick={() => setEditedTaskPriority(star)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor={`task-${task.id}`}
+                    className={cn(
+                      "text-lg font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                      task.completed && "line-through text-muted-foreground",
+                    )}
+                  >
+                    {task.name}
+                  </label>
+                )}
+                {!task.completed && editingTaskId !== task.id && (
+                  <div className="flex items-center ml-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
                         className={cn(
-                          "h-5 w-5 cursor-pointer",
-                          star <= editedTaskPriority ? "text-yellow-400 fill-yellow-400" : "text-gray-300",
+                          "h-4 w-4",
+                          star <= task.priority ? "text-yellow-400 fill-yellow-400" : "text-gray-300",
                         )}
-                        onClick={() => setEditedTaskPriority(star)}
                       />
                     ))}
                   </div>
-                </div>
-              ) : (
-                <label
-                  htmlFor={`task-${task.id}`}
-                  className={cn(
-                    "text-lg font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-                    task.completed && "line-through text-muted-foreground",
-                  )}
-                >
-                  {task.name}
-                </label>
-              )}
-              {!task.completed && editingTaskId !== task.id && (
-                <div className="flex items-center ml-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={cn(
-                        "h-4 w-4",
-                        star <= task.priority ? "text-yellow-400 fill-yellow-400" : "text-gray-300",
-                      )}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-1 ml-auto">
-              {editingTaskId === task.id ? (
-                <>
-                  <Button variant="ghost" size="icon" onClick={() => handleSaveEdit(task.id)}>
-                    <Check className="h-4 w-4 text-green-500" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
-                    <X className="h-4 w-4 text-red-500" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button variant="ghost" size="icon" onClick={() => onAddFollowUpTask(task)}>
-                    <CopyPlus className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleEditClick(task)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => onDeleteTask(task.id)}>
-                    <Trash className="h-4 w-4 text-red-500" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleAddSubTaskClick(task.id)}>
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                  {hasSubTasks && (
-                    <Button variant="ghost" size="icon" onClick={() => toggleExpand(task.id)}>
-                      {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                )}
+              </div>
+              <div className="flex items-center gap-1 ml-auto">
+                {editingTaskId === task.id ? (
+                  <>
+                    <Button variant="ghost" size="icon" onClick={() => handleSaveEdit(task.id)}>
+                      <Check className="h-4 w-4 text-green-500" />
                     </Button>
-                  )}
-                </>
-              )}
+                    <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
+                      <X className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <CalendarPlus className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <div className="p-2">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => onScheduleTask(task.id, new Date())}
+                          >
+                            Today
+                          </Button>
+                        </div>
+                        <Calendar
+                          mode="single"
+                          onSelect={(date) => {
+                            if (date) {
+                              onScheduleTask(task.id, date);
+                            }
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <Button variant="ghost" size="icon" onClick={() => onAddFollowUpTask(task)}>
+                      <CopyPlus className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(task)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => onDeleteTask(task.id)}>
+                      <Trash className="h-4 w-4 text-red-500" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleAddSubTaskClick(task.id)}>
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                    {hasSubTasks && (
+                      <Button variant="ghost" size="icon" onClick={() => toggleExpand(task.id)}>
+                        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-          {task.completed && task.completed_at && ( // Use completed_at
-            <span className="text-sm text-muted-foreground mt-1 self-end">
-              Completed: {format(new Date(task.completed_at), "MMM dd, yyyy HH:mm")}
-            </span>
-          )}
-        </div>
-        {isExpanded && hasSubTasks && (
-          <div className="space-y-4 mt-4">
-            {subTasks.map(subTask => renderTaskItem(subTask, level + 1))}
+            {task.completed && task.completed_at && ( // Use completed_at
+              <span className="text-sm text-muted-foreground mt-1 self-end">
+                Completed: {format(new Date(task.completed_at), "MMM dd, yyyy HH:mm")}
+              </span>
+            )}
           </div>
         )}
-      </React.Fragment>
+      </Draggable>
     );
   };
 
-  const topLevelTasks = sortTasks(tasks.filter(task => !task.parent_id)); // Use parent_id
+  const topLevelTasks = sortTasks(tasks.filter(task => !task.parent_id));
 
   return (
     <div className="flex flex-col h-full">
@@ -253,13 +289,20 @@ const TaskList: React.FC<TaskListProps> = ({
         )}
       </div>
 
-      <div className="space-y-4">
-        {topLevelTasks.length === 0 && tasks.length === 0 ? (
-          <p className="text-muted-foreground">No tasks yet. Add one above!</p>
-        ) : (
-          topLevelTasks.map(task => renderTaskItem(task))
-        )}
-      </div>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="tasks">
+          {(provided) => (
+            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+              {topLevelTasks.length === 0 && tasks.length === 0 ? (
+                <p className="text-muted-foreground">No tasks yet. Add one above!</p>
+              ) : (
+                topLevelTasks.map((task, index) => renderTaskItem(task, 0, index))
+              )}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
     </div>
   );
 };
