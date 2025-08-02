@@ -3,9 +3,11 @@ import { Task } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Star, Pencil, Trash, Check, X, ChevronDown, ChevronRight, CopyPlus, GripVertical } from "lucide-react";
+import { Plus, Star, Pencil, Trash, Check, X, ChevronDown, ChevronRight, CopyPlus, CalendarPlus, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 
 interface TaskListProps {
@@ -15,6 +17,7 @@ interface TaskListProps {
   onDeleteTask: (taskId: string) => void;
   onEditTask: (taskId: string, newName: string, newPriority: number) => void;
   onAddFollowUpTask: (task: Task) => void;
+  onScheduleTask: (taskId: string, date: Date) => void;
   onDragEnd: (result: DropResult) => void;
 }
 
@@ -25,6 +28,7 @@ const TaskList: React.FC<TaskListProps> = ({
   onDeleteTask,
   onEditTask,
   onAddFollowUpTask,
+  onScheduleTask,
   onDragEnd,
 }) => {
   const [newTaskName, setNewTaskName] = React.useState("");
@@ -191,6 +195,33 @@ const TaskList: React.FC<TaskListProps> = ({
                   </>
                 ) : (
                   <>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <CalendarPlus className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <div className="p-2">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => onScheduleTask(task.id, new Date())}
+                          >
+                            Today
+                          </Button>
+                        </div>
+                        <Calendar
+                          mode="single"
+                          onSelect={(date) => {
+                            if (date) {
+                              onScheduleTask(task.id, date);
+                            }
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <Button variant="ghost" size="icon" onClick={() => onAddFollowUpTask(task)}>
                       <CopyPlus className="h-4 w-4" />
                     </Button>

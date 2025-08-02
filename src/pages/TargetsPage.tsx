@@ -168,6 +168,20 @@ const TargetsPage = () => {
     }
   };
 
+  const handleScheduleTask = async (taskId: string, date: Date) => {
+    const updatedTask = await updateTask(taskId, { scheduled_date: date.toISOString() });
+    if (updatedTask) {
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === taskId ? updatedTask : task
+        )
+      );
+      toast.success("Task scheduled!");
+    } else {
+      toast.error("Failed to schedule task.");
+    }
+  };
+
   const filteredTasks = selectedAreaId
     ? tasks.filter((task) => task.area_id === selectedAreaId) // Use area_id
     : [];
@@ -204,6 +218,7 @@ const TargetsPage = () => {
             onDeleteTask={handleDeleteTask}
             onEditTask={handleEditTask}
             onAddFollowUpTask={handleAddFollowUpTask}
+            onScheduleTask={handleScheduleTask}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">
