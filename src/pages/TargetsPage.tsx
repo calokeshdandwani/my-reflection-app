@@ -149,6 +149,15 @@ const TargetsPage = () => {
     ? tasks.filter((task) => task.area_id === selectedAreaId) // Use area_id
     : [];
 
+  const pendingTasksByArea = tasks.reduce((acc, task) => {
+    if (!task.completed) {
+      acc[task.area_id] = (acc[task.area_id] || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<string, number>);
+
+  const totalPendingTasks = Object.values(pendingTasksByArea).reduce((acc, count) => acc + count, 0);
+
   return (
     <div className="flex h-full">
       <aside className="w-80 border-r bg-sidebar text-sidebar-foreground p-4 flex flex-col">
@@ -159,6 +168,8 @@ const TargetsPage = () => {
           onAddArea={handleAddArea}
           onUpdateArea={handleUpdateArea}
           onDeleteArea={handleDeleteArea}
+          pendingTasksByArea={pendingTasksByArea}
+          totalPendingTasks={totalPendingTasks}
         />
       </aside>
       <main className="flex-1 p-6">
