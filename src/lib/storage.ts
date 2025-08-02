@@ -20,9 +20,10 @@ export const loadSupabaseData = async <T>(
       return undefined;
     }
     return data as T[];
-  } catch (error: any) { // Catch unexpected errors
+  } catch (error: unknown) { // Catch unexpected errors
+    const message = error instanceof Error ? error.message : String(error);
     console.error(`Unexpected error loading data from ${tableName}:`, error);
-    toast.error(`An unexpected error occurred while loading ${tableName}: ${error.message}`);
+    toast.error(`An unexpected error occurred while loading ${tableName}: ${message}`);
     return undefined;
   }
 };
@@ -45,9 +46,10 @@ export const saveSupabaseData = async <T>(
       return undefined;
     }
     return savedData as T;
-  } catch (error: any) { // Catch unexpected errors
+  } catch (error: unknown) { // Catch unexpected errors
+    const message = error instanceof Error ? error.message : String(error);
     console.error(`Unexpected error saving data to ${tableName}:`, error);
-    toast.error(`An unexpected error occurred while saving to ${tableName}: ${error.message}`);
+    toast.error(`An unexpected error occurred while saving to ${tableName}: ${message}`);
     return undefined;
   }
 };
@@ -72,9 +74,10 @@ export const updateSupabaseData = async <T>(
       return undefined;
     }
     return data as T;
-  } catch (error: any) { // Catch unexpected errors
+  } catch (error: unknown) { // Catch unexpected errors
+    const message = error instanceof Error ? error.message : String(error);
     console.error(`Unexpected error updating data in ${tableName}:`, error);
-    toast.error(`An unexpected error occurred while updating ${tableName}: ${error.message}`);
+    toast.error(`An unexpected error occurred while updating ${tableName}: ${message}`);
     return undefined;
   }
 };
@@ -93,9 +96,10 @@ export const deleteSupabaseData = async (
       return false;
     }
     return true;
-  } catch (error: any) { // Catch unexpected errors
-      console.error(`Unexpected error deleting data from ${tableName}:`, error);
-      toast.error(`An unexpected error occurred while deleting from ${tableName}: ${error.message}`);
+  } catch (error: unknown) { // Catch unexpected errors
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Unexpected error deleting data from ${tableName}:`, error);
+    toast.error(`An unexpected error occurred while deleting from ${tableName}: ${message}`);
     return false;
   }
 };
@@ -112,6 +116,14 @@ export const saveArea = async (area: Omit<Area, "id" | "created_at">): Promise<A
     ...area,
   };
   return saveSupabaseData<Area>("areas", newArea);
+};
+
+export const updateArea = async (areaId: string, updates: Partial<Area>): Promise<Area | undefined> => {
+  return updateSupabaseData<Area>("areas", areaId, updates);
+};
+
+export const deleteArea = async (areaId: string): Promise<boolean> => {
+  return deleteSupabaseData("areas", areaId);
 };
 
 export const loadTasks = async (): Promise<Task[] | undefined> => {
