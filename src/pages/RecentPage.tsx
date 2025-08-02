@@ -230,7 +230,7 @@ const RecentPage: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <div className="text-sm font-semibold text-muted-foreground self-start mr-2">{area?.name}</div>
+                  <div className="text-sm font-semibold text-muted-foreground mr-2">{area?.name}</div>
                   <Button variant="ghost" size="icon" onClick={() => handleEditClick(task)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
