@@ -128,7 +128,7 @@ const TargetsPage = () => {
         completed_at: new Date().toISOString(),
       });
       if (completedTask) {
-        setTasks((prevTasks) => [...prevTasks, completedTask]);
+        setTasks((prevTasks) => [...prevTasks, { ...completedTask, area_id: originalTask.area_id }]);
         toast.success(`Follow-up task for "${originalTask.name}" added!`);
       } else {
         toast.error("Failed to mark follow-up task as completed.");
