@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { loadTasks, updateTask, deleteTask, saveTask } from "@/lib/storage";
-import { Task } from "@/types";
+import { loadTasks, updateTask, deleteTask, saveTask, loadAreas } from "@/lib/storage";
+import { Task, Area } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 const RecentPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editedTaskName, setEditedTaskName] = useState("");
   const [editedTaskPriority, setEditedTaskPriority] = useState(3);
@@ -19,7 +20,7 @@ const RecentPage: React.FC = () => {
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState(3);
 
-  const fetchTasks = async () => {
+  const fetchData = async () => {
     const loadedTasks = await loadTasks();
     if (loadedTasks) {
       const sortedTasks = loadedTasks.sort(
@@ -27,10 +28,14 @@ const RecentPage: React.FC = () => {
       );
       setTasks(sortedTasks.filter(task => !task.completed));
     }
+    const loadedAreas = await loadAreas();
+    if (loadedAreas) {
+      setAreas(loadedAreas);
+    }
   };
 
   useEffect(() => {
-    fetchTasks();
+    fetchData();
   }, []);
 
   const onToggleTaskCompletion = async (taskId: string) => {
@@ -41,7 +46,7 @@ const RecentPage: React.FC = () => {
         completed_at: !task.completed ? new Date().toISOString() : undefined,
       });
       if (updatedTask) {
-        fetchTasks();
+        fetchData();
         toast.success(`Task ${updatedTask.completed ? "marked as completed" : "marked as incomplete"}.`);
       }
     }
@@ -50,7 +55,7 @@ const RecentPage: React.FC = () => {
   const onDeleteTask = async (taskId: string) => {
     const success = await deleteTask(taskId);
     if (success) {
-      fetchTasks();
+      fetchData();
       toast.success("Task deleted.");
     }
   };
@@ -58,7 +63,7 @@ const RecentPage: React.FC = () => {
   const onEditTask = async (taskId: string, newName: string, newPriority: number) => {
     const updatedTask = await updateTask(taskId, { name: newName, priority: newPriority });
     if (updatedTask) {
-      fetchTasks();
+      fetchData();
       setEditingTaskId(null);
       toast.success("Task updated.");
     }
@@ -95,7 +100,7 @@ const RecentPage: React.FC = () => {
       };
       const savedTask = await saveTask(task);
       if (savedTask) {
-        fetchTasks();
+        fetchData();
         setNewTaskName("");
         setNewTaskPriority(3);
         setAddingSubTaskFor(null);
@@ -149,6 +154,7 @@ const RecentPage: React.FC = () => {
     const subTasks = sortTasks(tasks.filter(t => t.parent_id === task.id));
     const isExpanded = expandedTasks.has(task.id);
     const hasSubTasks = subTasks.length > 0;
+    const area = areas.find(a => a.id === task.area_id);
 
     return (
       <React.Fragment key={task.id}>
@@ -224,6 +230,7 @@ const RecentPage: React.FC = () => {
                 </>
               ) : (
                 <>
+                  <div className="text-xs text-muted-foreground self-start mr-2">{area?.name}</div>
                   <Button variant="ghost" size="icon" onClick={() => handleEditClick(task)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -241,6 +248,9 @@ const RecentPage: React.FC = () => {
                 </>
               )}
             </div>
+          </div>
+          <div className="text-xs text-muted-foreground mt-1 self-start">
+            Created: {format(new Date(task.created_at), "MMM dd, yyyy HH:mm")}
           </div>
           {task.completed && task.completed_at && (
             <span className="text-sm text-muted-foreground mt-1 self-end">
