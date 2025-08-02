@@ -168,25 +168,6 @@ const TargetsPage = () => {
     }
   };
 
-  const handleScheduleTask = async (taskId: string, date: Date) => {
-    const originalTasks = [...tasks];
-    const newTasks = tasks.map(task =>
-      task.id === taskId
-        ? { ...task, scheduled_date: date.toISOString() }
-        : task
-    );
-    setTasks(newTasks);
-
-    const updatedTask = await updateTask(taskId, { scheduled_date: date.toISOString() });
-
-    if (updatedTask) {
-      toast.success("Task scheduled!");
-    } else {
-      toast.error("Failed to schedule task. Reverting changes.");
-      setTasks(originalTasks);
-    }
-  };
-
   const filteredTasks = selectedAreaId
     ? tasks.filter((task) => task.area_id === selectedAreaId) // Use area_id
     : [];
@@ -223,7 +204,6 @@ const TargetsPage = () => {
             onDeleteTask={handleDeleteTask}
             onEditTask={handleEditTask}
             onAddFollowUpTask={handleAddFollowUpTask}
-            onScheduleTask={handleScheduleTask}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">
