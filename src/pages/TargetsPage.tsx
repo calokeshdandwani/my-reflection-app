@@ -131,7 +131,7 @@ const TargetsPage = () => {
     }
   };
 
-  const handleEditTask = async (taskId: string, newName: string, newPriority: number) => {
+  const handleEditTask = async (taskId: string, newName:string, newPriority: number) => {
     const updatedTask = await updateTask(taskId, { name: newName, priority: newPriority });
     if (updatedTask) {
       setTasks((prevTasks) =>
@@ -142,6 +142,23 @@ const TargetsPage = () => {
       toast.success("Task updated!");
     } else {
       toast.error("Failed to update task.");
+    }
+  };
+
+  const handleAddFollowUpTask = async (originalTask: Task) => {
+    const newTask: Omit<Task, "id" | "created_at"> = {
+      ...originalTask,
+      name: `${originalTask.name} - follow up`,
+      completed: true,
+      completed_at: new Date().toISOString(),
+      parent_id: originalTask.id, // Make it a sub-task of the original
+    };
+    const savedTask = await saveTask(newTask);
+    if (savedTask) {
+      setTasks((prevTasks) => [...prevTasks, savedTask]);
+      toast.success(`Follow-up task for "${originalTask.name}" added!`);
+    } else {
+      toast.error("Failed to add follow-up task.");
     }
   };
 
@@ -180,6 +197,7 @@ const TargetsPage = () => {
             onToggleTaskCompletion={handleToggleTaskCompletion}
             onDeleteTask={handleDeleteTask}
             onEditTask={handleEditTask}
+            onAddFollowUpTask={handleAddFollowUpTask}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">
