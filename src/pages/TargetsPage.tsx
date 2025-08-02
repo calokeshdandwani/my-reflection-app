@@ -3,7 +3,7 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import AreaList from "./targets/AreaList";
 import TaskList from "./targets/TaskList";
 import { Area, Task } from "@/types";
-import { loadAreas, saveArea, updateArea, deleteArea, loadTasks, saveTask, updateTask, deleteTask } from "@/lib/storage"; // Updated imports
+import { loadAreas, saveArea, loadTasks, saveTask, updateTask, deleteTask } from "@/lib/storage"; // Updated imports
 import { toast } from "sonner";
 
 const TargetsPage = () => {
@@ -45,37 +45,6 @@ const TargetsPage = () => {
       toast.success(`Area "${name}" added!`);
     } else {
       toast.error("Failed to add area.");
-    }
-  };
-
-  const handleUpdateArea = async (areaId: string, newName: string) => {
-    const updatedArea = await updateArea(areaId, { name: newName });
-    if (updatedArea) {
-      setAreas((prevAreas) =>
-        prevAreas.map((area) =>
-          area.id === areaId ? updatedArea : area
-        )
-      );
-      toast.success("Area updated!");
-    } else {
-      toast.error("Failed to update area.");
-    }
-  };
-
-  const handleDeleteArea = async (areaId: string) => {
-    // Before deleting an area, you might want to handle tasks associated with it.
-    // For example, delete them or re-assign them. This example just deletes the area.
-    const success = await deleteArea(areaId);
-    if (success) {
-      setAreas((prevAreas) => prevAreas.filter((area) => area.id !== areaId));
-      // Also remove tasks associated with the deleted area from the local state
-      setTasks((prevTasks) => prevTasks.filter((task) => task.area_id !== areaId));
-      if (selectedAreaId === areaId) {
-        setSelectedAreaId(areas.length > 1 ? areas.filter(a => a.id !== areaId)[0].id : null);
-      }
-      toast.success("Area deleted!");
-    } else {
-      toast.error("Failed to delete area.");
     }
   };
 
@@ -131,7 +100,7 @@ const TargetsPage = () => {
     }
   };
 
-  const handleEditTask = async (taskId: string, newName:string, newPriority: number) => {
+  const handleEditTask = async (taskId: string, newName: string, newPriority: number) => {
     const updatedTask = await updateTask(taskId, { name: newName, priority: newPriority });
     if (updatedTask) {
       setTasks((prevTasks) =>
@@ -146,17 +115,24 @@ const TargetsPage = () => {
   };
 
   const handleAddFollowUpTask = async (originalTask: Task) => {
-    const newTask: Omit<Task, "id" | "created_at"> = {
-      ...originalTask,
+    const newTask: Omit<Task, "id" | "created_at" | "completed" | "completed_at"> = {
+      area_id: originalTask.area_id,
       name: `${originalTask.name} - follow up`,
-      completed: true,
-      completed_at: new Date().toISOString(),
-      parent_id: originalTask.id, // Make it a sub-task of the original
+      priority: originalTask.priority,
+      parent_id: originalTask.id,
     };
     const savedTask = await saveTask(newTask);
     if (savedTask) {
-      setTasks((prevTasks) => [...prevTasks, savedTask]);
-      toast.success(`Follow-up task for "${originalTask.name}" added!`);
+      const completedTask = await updateTask(savedTask.id, {
+        completed: true,
+        completed_at: new Date().toISOString(),
+      });
+      if (completedTask) {
+        setTasks((prevTasks) => [...prevTasks, completedTask]);
+        toast.success(`Follow-up task for "${originalTask.name}" added!`);
+      } else {
+        toast.error("Failed to mark follow-up task as completed.");
+      }
     } else {
       toast.error("Failed to add follow-up task.");
     }
@@ -166,27 +142,14 @@ const TargetsPage = () => {
     ? tasks.filter((task) => task.area_id === selectedAreaId) // Use area_id
     : [];
 
-  const pendingTasksByArea = tasks.reduce((acc, task) => {
-    if (!task.completed) {
-      acc[task.area_id] = (acc[task.area_id] || 0) + 1;
-    }
-    return acc;
-  }, {} as Record<string, number>);
-
-  const totalPendingTasks = Object.values(pendingTasksByArea).reduce((acc, count) => acc + count, 0);
-
   return (
     <div className="flex h-full">
-      <aside className="w-80 border-r bg-sidebar text-sidebar-foreground p-4 flex flex-col">
+      <aside className="w-64 border-r bg-sidebar text-sidebar-foreground p-4 flex flex-col">
         <AreaList
           areas={areas}
           selectedAreaId={selectedAreaId}
           onSelectArea={setSelectedAreaId}
           onAddArea={handleAddArea}
-          onUpdateArea={handleUpdateArea}
-          onDeleteArea={handleDeleteArea}
-          pendingTasksByArea={pendingTasksByArea}
-          totalPendingTasks={totalPendingTasks}
         />
       </aside>
       <main className="flex-1 p-6">
