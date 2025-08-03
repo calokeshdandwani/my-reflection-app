@@ -7,6 +7,8 @@ export interface Task {
   completed_at?: string; // Changed to snake_case (ISO string date)
   created_at: string; // Changed to snake_case (ISO string date)
   parent_id?: string; // Changed to snake_case: Optional parent ID for sub-tasks
+  scheduled_for?: string; // ISO date string for scheduling
+  schedule_order?: number; // Order of task on a given scheduled date
 }
 
 export interface Area {
