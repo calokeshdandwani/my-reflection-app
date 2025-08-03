@@ -5,6 +5,7 @@ import TaskList from "./targets/TaskList";
 import { Area, Task } from "@/types";
 import { loadAreas, saveArea, loadTasks, saveTask, updateTask, deleteTask } from "@/lib/storage"; // Updated imports
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 const TargetsPage = () => {
   const [areas, setAreas] = React.useState<Area[]>([]);
@@ -114,6 +115,18 @@ const TargetsPage = () => {
     }
   };
 
+  const handleScheduleTask = async (taskId: string, date: string) => {
+    const tasksForDate = tasks.filter(t => t.scheduled_for === date);
+    const maxOrder = tasksForDate.reduce((max, t) => Math.max(max, t.schedule_order || 0), 0);
+    const updatedTask = await updateTask(taskId, { scheduled_for: date, schedule_order: maxOrder + 1 });
+    if (updatedTask) {
+      setTasks(prev => prev.map(t => t.id === taskId ? updatedTask : t));
+      toast.success(`Task scheduled for ${format(new Date(date), "MMM dd, yyyy")}`);
+    } else {
+      toast.error("Failed to schedule task.");
+    }
+  };
+
   const filteredTasks = selectedAreaId
     ? tasks.filter((task) => task.area_id === selectedAreaId) // Use area_id
     : [];
@@ -136,6 +149,7 @@ const TargetsPage = () => {
             onToggleTaskCompletion={handleToggleTaskCompletion}
             onDeleteTask={handleDeleteTask}
             onEditTask={handleEditTask}
+            onScheduleTask={handleScheduleTask}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">

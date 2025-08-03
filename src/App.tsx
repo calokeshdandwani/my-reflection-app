@@ -8,6 +8,8 @@ import HistoryPage from "./pages/HistoryPage";
 import TargetsPage from "./pages/TargetsPage";
 import SummaryPage from "./pages/SummaryPage";
 import RecentPage from "./pages/RecentPage"; // Import RecentPage
+import TodaysPlaygroundPage from "./pages/TodaysPlaygroundPage";
+import UpcomingPage from "./pages/UpcomingPage";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 import NotificationScheduler from "./components/NotificationScheduler";
@@ -47,6 +49,8 @@ const App = () => {
             <Route path="/history/summary" element={<Layout><SummaryPage /></Layout>} />
             <Route path="/targets" element={<Layout><TargetsPage /></Layout>} />
             <Route path="/recent" element={<Layout><RecentPage /></Layout>} />
+            <Route path="/today" element={<Layout><TodaysPlaygroundPage /></Layout>} />
+            <Route path="/upcoming" element={<Layout><UpcomingPage /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -3,16 +3,22 @@ import { Task } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Star, Pencil, Trash, Check, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Star, Pencil, Trash, Check, X, ChevronDown, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 interface TaskListProps {
   tasks: Task[];
-  onAddTask: (name: string, priority: number, parentId?: string) => void;
+  onAddTask?: (name: string, priority: number, parentId?: string) => void;
   onToggleTaskCompletion: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onEditTask: (taskId: string, newName: string, newPriority: number) => void;
+  onScheduleTask: (taskId: string, date: string) => void;
+  enableDrag?: boolean;
+  onReorderTasks?: (sourceId: string, targetId: string) => void;
+  disableAddTask?: boolean;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -21,6 +27,10 @@ const TaskList: React.FC<TaskListProps> = ({
   onToggleTaskCompletion,
   onDeleteTask,
   onEditTask,
+  onScheduleTask,
+  enableDrag = false,
+  onReorderTasks,
+  disableAddTask = false,
 }) => {
   const [newTaskName, setNewTaskName] = React.useState("");
   const [newTaskPriority, setNewTaskPriority] = React.useState(3);
@@ -29,9 +39,10 @@ const TaskList: React.FC<TaskListProps> = ({
   const [editedTaskPriority, setEditedTaskPriority] = React.useState(3);
   const [addingSubTaskFor, setAddingSubTaskFor] = React.useState<string | null>(null);
   const [expandedTasks, setExpandedTasks] = React.useState<Set<string>>(new Set());
+  const [draggedId, setDraggedId] = React.useState<string | null>(null);
 
   const handleAddTask = (parentId?: string) => {
-    if (newTaskName.trim()) {
+    if (newTaskName.trim() && onAddTask) {
       onAddTask(newTaskName.trim(), newTaskPriority, parentId);
       setNewTaskName("");
       setNewTaskPriority(3);
@@ -109,6 +120,16 @@ const TaskList: React.FC<TaskListProps> = ({
     return (
       <React.Fragment key={task.id}>
         <div
+          draggable={enableDrag && level === 0}
+          onDragStart={() => setDraggedId(task.id)}
+          onDragOver={(e) => {
+            if (enableDrag && level === 0) e.preventDefault();
+          }}
+          onDrop={() => {
+            if (enableDrag && level === 0 && draggedId && draggedId !== task.id) {
+              onReorderTasks?.(draggedId, task.id);
+            }
+          }}
           className={cn(
             "flex flex-col p-3 border rounded-md bg-card text-card-foreground",
             task.completed && "opacity-60",
@@ -189,6 +210,25 @@ const TaskList: React.FC<TaskListProps> = ({
                   <Button variant="ghost" size="icon" onClick={() => handleAddSubTaskClick(task.id)}>
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <CalendarIcon className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={task.scheduled_for ? new Date(task.scheduled_for) : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            onScheduleTask(task.id, date.toISOString().split("T")[0]);
+                          }
+                        }}
+                        disabled={(date) => date < new Date(new Date().toDateString())}
+                      />
+                    </PopoverContent>
+                  </Popover>
                   {hasSubTasks && (
                     <Button variant="ghost" size="icon" onClick={() => toggleExpand(task.id)}>
                       {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -218,39 +258,41 @@ const TaskList: React.FC<TaskListProps> = ({
   return (
     <div className="flex flex-col h-full">
       <h2 className="text-2xl font-bold mb-6">Tasks</h2>
-      <div className="flex items-center gap-2 mb-6">
-        <Input
-          placeholder={addingSubTaskFor ? "New Sub-task Name" : "New Task Name"}
-          value={newTaskName}
-          onChange={(e) => setNewTaskName(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && handleAddTask(addingSubTaskFor || undefined)}
-          className="flex-1"
-        />
-        <div className="flex items-center gap-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star
-              key={star}
-              className={cn(
-                "h-5 w-5 cursor-pointer",
-                star <= newTaskPriority ? "text-yellow-400 fill-yellow-400" : "text-gray-300",
-              )}
-              onClick={() => setNewTaskPriority(star)}
-            />
-          ))}
-        </div>
-        <Button onClick={() => handleAddTask(addingSubTaskFor || undefined)} size="icon">
-          <Plus className="h-4 w-4" />
-        </Button>
-        {addingSubTaskFor && (
-          <Button variant="ghost" size="icon" onClick={() => setAddingSubTaskFor(null)}>
-            <X className="h-4 w-4" />
+      {!disableAddTask && onAddTask && (
+        <div className="flex items-center gap-2 mb-6">
+          <Input
+            placeholder={addingSubTaskFor ? "New Sub-task Name" : "New Task Name"}
+            value={newTaskName}
+            onChange={(e) => setNewTaskName(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleAddTask(addingSubTaskFor || undefined)}
+            className="flex-1"
+          />
+          <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                className={cn(
+                  "h-5 w-5 cursor-pointer",
+                  star <= newTaskPriority ? "text-yellow-400 fill-yellow-400" : "text-gray-300",
+                )}
+                onClick={() => setNewTaskPriority(star)}
+              />
+            ))}
+          </div>
+          <Button onClick={() => handleAddTask(addingSubTaskFor || undefined)} size="icon">
+            <Plus className="h-4 w-4" />
           </Button>
-        )}
-      </div>
+          {addingSubTaskFor && (
+            <Button variant="ghost" size="icon" onClick={() => setAddingSubTaskFor(null)}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      )}
 
       <div className="space-y-4">
         {topLevelTasks.length === 0 && tasks.length === 0 ? (
-          <p className="text-muted-foreground">No tasks yet. Add one above!</p>
+          <p className="text-muted-foreground">No tasks yet.</p>
         ) : (
           topLevelTasks.map(task => renderTaskItem(task))
         )}

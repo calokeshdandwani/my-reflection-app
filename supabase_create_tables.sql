@@ -14,7 +14,9 @@ CREATE TABLE public.tasks (
     completed boolean NOT NULL DEFAULT FALSE,
     completed_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    parent_id uuid REFERENCES public.tasks(id) ON DELETE CASCADE
+    parent_id uuid REFERENCES public.tasks(id) ON DELETE CASCADE,
+    scheduled_for date,
+    schedule_order integer
 );
 
 -- Create 'hourly_responses' table
