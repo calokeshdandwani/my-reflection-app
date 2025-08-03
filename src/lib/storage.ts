@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient";
-import { Area, Task, HourlyResponse } from "@/types";
+import { Area, Task, HourlyResponse, Tree, Member } from "@/types";
 import { toast } from "sonner"; // Import toast for notifications
 
 // Generic function to fetch data from Supabase
@@ -124,6 +124,48 @@ export const updateArea = async (areaId: string, updates: Partial<Area>): Promis
 
 export const deleteArea = async (areaId: string): Promise<boolean> => {
   return deleteSupabaseData("areas", areaId);
+};
+
+export const loadTrees = async (): Promise<Tree[] | undefined> => {
+  return loadSupabaseData<Tree>("trees", "created_at", true);
+};
+
+export const saveTree = async (tree: Omit<Tree, "id" | "created_at">): Promise<Tree | undefined> => {
+  const newTree: Tree = {
+    id: crypto.randomUUID(),
+    created_at: new Date().toISOString(),
+    ...tree,
+  };
+  return saveSupabaseData<Tree>("trees", newTree);
+};
+
+export const updateTree = async (treeId: string, updates: Partial<Tree>): Promise<Tree | undefined> => {
+  return updateSupabaseData<Tree>("trees", treeId, updates);
+};
+
+export const deleteTree = async (treeId: string): Promise<boolean> => {
+  return deleteSupabaseData("trees", treeId);
+};
+
+export const loadMembers = async (): Promise<Member[] | undefined> => {
+  return loadSupabaseData<Member>("members", "created_at", true);
+};
+
+export const saveMember = async (member: Omit<Member, "id" | "created_at">): Promise<Member | undefined> => {
+  const newMember: Member = {
+    id: crypto.randomUUID(),
+    created_at: new Date().toISOString(),
+    ...member,
+  };
+  return saveSupabaseData<Member>("members", newMember);
+};
+
+export const updateMember = async (memberId: string, updates: Partial<Member>): Promise<Member | undefined> => {
+  return updateSupabaseData<Member>("members", memberId, updates);
+};
+
+export const deleteMember = async (memberId: string): Promise<boolean> => {
+  return deleteSupabaseData("members", memberId);
 };
 
 export const loadTasks = async (): Promise<Task[] | undefined> => {

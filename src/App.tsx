@@ -8,6 +8,7 @@ import HistoryPage from "./pages/HistoryPage";
 import TargetsPage from "./pages/TargetsPage";
 import SummaryPage from "./pages/SummaryPage";
 import RecentPage from "./pages/RecentPage"; // Import RecentPage
+import TaxPlannerPage from "./pages/TaxPlannerPage";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 import NotificationScheduler from "./components/NotificationScheduler";
@@ -44,6 +45,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Layout><HomePage /></Layout>} />
             <Route path="/history" element={<Layout><HistoryPage /></Layout>} />
+            <Route path="/tax-planner" element={<Layout><TaxPlannerPage /></Layout>} />
             <Route path="/history/summary" element={<Layout><SummaryPage /></Layout>} />
             <Route path="/targets" element={<Layout><TargetsPage /></Layout>} />
             <Route path="/recent" element={<Layout><RecentPage /></Layout>} />
