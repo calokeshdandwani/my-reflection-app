@@ -20,16 +20,3 @@ export interface HourlyResponse {
   timestamp: string; // ISO string date
   response: string;
 }
-
-export interface Tree {
-  id: string;
-  name: string;
-  created_at: string;
-}
-
-export interface Member {
-  id: string;
-  tree_id: string;
-  name: string;
-  created_at: string;
-}

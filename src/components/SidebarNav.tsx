@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Home, ListTodo, History, FileText, Clock, Landmark } from "lucide-react"; // Added Clock icon for Recent
+import { Home, ListTodo, History, FileText, Clock } from "lucide-react"; // Added Clock icon for Recent
 
 const SidebarNav: React.FC = () => {
   return (
@@ -29,18 +29,6 @@ const SidebarNav: React.FC = () => {
       >
         <ListTodo className="h-4 w-4" />
         Targets
-      </NavLink>
-      <NavLink
-        to="/tax-planner"
-        className={({ isActive }) =>
-          cn(
-            "flex items-center gap-3 rounded-md px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
-          )
-        }
-      >
-        <Landmark className="h-4 w-4" />
-        Tax Planner
       </NavLink>
       <NavLink
         to="/recent"
