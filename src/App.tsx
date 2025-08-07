@@ -19,6 +19,7 @@ const queryClient = new QueryClient();
 const App = () => {
   React.useEffect(() => {
     // Simple check to see if Supabase client is initialized and can connect
+// This is a dummy comment to trigger a new deployment on Vercel.
     const checkSupabaseConnection = async () => {
       try {
         // Attempt a simple query (e.g., to a non-existent table) to trigger a connection
